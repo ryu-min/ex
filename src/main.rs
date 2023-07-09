@@ -1,6 +1,6 @@
 use std::{io, fmt};
 
-
+#[derive(Clone)]
  enum Token {
     Var,
     Dot,
@@ -10,7 +10,8 @@ use std::{io, fmt};
     OpenCurlyBrace,
     CloseCurlyBrace,
     StringLiteral(String),
-    IntLiteral(i32),
+    IntLiteral(i64),
+    FloatLiteral(f64),
     Exec
  }
  impl fmt::Display for Token {
@@ -20,7 +21,8 @@ use std::{io, fmt};
             Token::Dot => write!(f, "DOT TOKEN"),
             Token::Assignment => write!(f, "ASSIGNMENT TOKEN"),
             Token::StringLiteral(s) => write!(f, "STRING LITERAL TOKEN WITH VALUE: {}", s),
-            Token::IntLiteral(i) => write!(f, "INT LITERAL TOKEN WITH VALUE: {}", i),
+            Token::IntLiteral(n) => write!(f, "INT LITERAL TOKEN WITH VALUE: {}", n),
+            Token::FloatLiteral(n) => write!(f, "FLOAT LITERAL WITH VALUE: {}", n),
             Token::Exec => write!(f, "EXEC TOKEN"),
             Token::OpenBrace => write!(f, "OPEN BRACE TOKEN"),
             Token::CloseBrace => write!(f, "CLOSE BRACE TOKEN"),
@@ -36,19 +38,24 @@ fn tokenize(program: &str) -> Vec<Token> {
         let splited_word = line.split(" ");
         for word in splited_word {
             if !word.is_empty() {
-                if let Some(token) = str_to_token(word) {
-                    result.append(token);
+                if let Some(tokens) = str_to_token(word) {
+                    for token in tokens {
+                        result.push(token);
+                    }
                 } else {
                     println!("can't parse string {} as token", word)
                 }
             }
         }
     }
-
     return result;
 }
 
 fn str_to_token(str_value: &str) -> Option<Vec<Token>>{
+    let mut source = str_value.to_string();
+    if str_value.is_empty() {
+        return Some(Vec::new());
+    }
     match str_value {
         "var" =>    Some(vec![Token::Var]),
         "." =>      Some(vec![Token::Dot]),
@@ -59,25 +66,73 @@ fn str_to_token(str_value: &str) -> Option<Vec<Token>>{
         "{" =>      Some(vec![Token::OpenCurlyBrace]),
         "}" =>      Some(vec![Token::CloseCurlyBrace]),
         _ => {
-            let int_convert_result = str_value.parse::<i32>();
-            if int_convert_result.is_ok() {
-                return Some(vec![Token::IntLiteral(int_convert_result.unwrap())])
+            if let Ok(i) = str_value.parse::<i64>() {
+                return Some(vec![Token::IntLiteral(i)]);
             }
-            return Some(vec![Token::StringLiteral(str_value.to_string())])
+            if let Ok(f) = str_value.parse::<f64>() {
+                return Some(vec![Token::FloatLiteral(f)]);
+            } 
+            if let Some(first_char) = str_value.chars().next() {
+                if first_char == ')' || first_char == '(' {
+                    if let Some(mut first_tokens) = str_to_token(first_char.to_string().as_str()) {
+                        if let Some(second_tokens) = str_to_token(&str_value[1..]) {
+                            for token in second_tokens {
+                                first_tokens.push(token)
+                            }
+                        }
+                        return Some(first_tokens);
+                    }
+                    else {
+                        assert!(true, "unreachable code");
+                        return None
+                    }
+                }
+                else {
+                    if let Some(str_literal) = read_string_literal(&mut source) {
+                        let mut result = Vec::new();
+                        result.push(str_literal);
+                        if let Some(other_tokens) = str_to_token(&mut source) {
+                            for token in other_tokens {
+                                result.push(token);
+                            }
+                        }
+                        return Some(result);
+                     } else {
+                        return Some(Vec::new());
+                     }     
+                }
+            }
+            None
         }
     }
 }
 
+fn read_string_literal(source: &mut String) -> Option<Token> {
+    let mut result = String::new();
+    for ch in source.chars() {
+        if ch.is_alphanumeric() {
+            result.push(ch);
+        } else {
+            break;
+        }
+    }
+    if !result.is_empty() {
+        source.replace_range(0..result.len(), "");
+        if let Some( tokens ) = str_to_token(&result) {
+            if tokens.len() == 1 {
+                return Some(tokens[0].clone());
+            } 
+        }
+    }
+    None
+}
+
 
 fn main() -> io::Result<()>{
-    let program = "some = (exec) ( ) 32 32.exe { } 44.22 .";
-    let mut tokens: Vec<Token> = Vec::new();
-    tokens.push(Token::Assignment);
-    tokens.push(Token::OpenBrace);
-    tokens.push(Token::CloseBrace);
+    let program = "4.44)";
+    let tokens = tokenize(program);
     for token in tokens {
-        println!("token is vec {}", token.to_string());
+        println!("token is {}", token.to_string());
     }
-    tokenize(program);
     Ok(())    
 }
