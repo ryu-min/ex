@@ -30,40 +30,40 @@ use std::{io, fmt};
     }
 }
 
-
-
-
-fn tokenize(program: &str) {
+fn tokenize(program: &str) -> Vec<Token> {
+    let mut result: Vec<Token> = Vec::new();
     for line in program.lines().clone() {
         let splited_word = line.split(" ");
         for word in splited_word {
             if !word.is_empty() {
                 if let Some(token) = str_to_token(word) {
-                    println!{"find token {}", token.to_string()}
+                    result.append(token);
                 } else {
                     println!("can't parse string {} as token", word)
                 }
             }
         }
     }
+
+    return result;
 }
 
-fn str_to_token(str_value: &str) -> Option<Token>{
+fn str_to_token(str_value: &str) -> Option<Vec<Token>>{
     match str_value {
-        "var" =>    Some(Token::Var),
-        "." =>      Some(Token::Dot),
-        "=" =>      Some(Token::Assignment),
-        "exec" =>   Some(Token::Exec),
-        "(" =>      Some(Token::OpenBrace),
-        ")" =>      Some(Token::CloseBrace),
-        "{" =>      Some(Token::OpenCurlyBrace),
-        "}" =>      Some(Token::CloseCurlyBrace),
+        "var" =>    Some(vec![Token::Var]),
+        "." =>      Some(vec![Token::Dot]),
+        "=" =>      Some(vec![Token::Assignment]),
+        "exec" =>   Some(vec![Token::Exec]),
+        "(" =>      Some(vec![Token::OpenBrace]),
+        ")" =>      Some(vec![Token::CloseBrace]),
+        "{" =>      Some(vec![Token::OpenCurlyBrace]),
+        "}" =>      Some(vec![Token::CloseCurlyBrace]),
         _ => {
             let int_convert_result = str_value.parse::<i32>();
             if int_convert_result.is_ok() {
-                return Some(Token::IntLiteral(int_convert_result.unwrap()))
+                return Some(vec![Token::IntLiteral(int_convert_result.unwrap())])
             }
-            return Some(Token::StringLiteral(str_value.to_string()))
+            return Some(vec![Token::StringLiteral(str_value.to_string())])
         }
     }
 }
@@ -71,6 +71,13 @@ fn str_to_token(str_value: &str) -> Option<Token>{
 
 fn main() -> io::Result<()>{
     let program = "some = (exec) ( ) 32 32.exe { } 44.22 .";
+    let mut tokens: Vec<Token> = Vec::new();
+    tokens.push(Token::Assignment);
+    tokens.push(Token::OpenBrace);
+    tokens.push(Token::CloseBrace);
+    for token in tokens {
+        println!("token is vec {}", token.to_string());
+    }
     tokenize(program);
     Ok(())    
 }
