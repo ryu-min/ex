@@ -1,4 +1,5 @@
 use std::{io, fmt};
+use std::collections::HashSet;
 
 #[derive(Clone)]
  enum Token {
@@ -107,6 +108,76 @@ fn str_to_token(str_value: &str) -> Option<Vec<Token>>{
     }
 }
 
+
+fn char_to_token(ch : char) -> Option<Token> {
+    match ch {
+        '.' =>      Some(Token::Dot),
+        '=' =>      Some(Token::Assignment),
+        '(' =>      Some(Token::OpenBrace),
+        ')' =>      Some(Token::CloseBrace),
+        '{' =>      Some(Token::OpenCurlyBrace),
+        '}' =>      Some(Token::CloseCurlyBrace),
+        _ =>        None
+    }
+}
+
+fn string_to_token(source: &str) -> Option<Token>{
+    match source {
+        "var" =>    Some(Token::Var),
+        "exec" =>   Some(Token::Exec),
+        _      =>   {
+            if let Ok(i) = source.parse::<i64>() {
+                return Some(Token::IntLiteral(i));
+            }
+            else if let Ok(f) = source.parse::<f64>() {
+                return Some(Token::FloatLiteral(f));
+            }
+            else {
+                return Some(Token::StringLiteral(source.to_string()))
+            }
+        }
+    }
+}
+
+fn read_token_from_char(source: &mut String) -> Option<Token> {
+    if let Some(ch) = source.chars().next() {
+        if let Some(token) = char_to_token(ch) {
+            source.replace_range(0..1, "");
+            return Some(token)
+        }
+    }
+    None
+}
+
+fn read_token_from_string(source: &mut String) -> Option<Token> {
+    let mut word = String::new();
+    for ch in source.chars() {
+        if ch.is_alphanumeric() && !get_reserved_chars().contains(&ch) {
+            word.push(ch)
+        }
+    }
+    println!("word is {word}");
+    if word.is_empty() {
+        return None
+    }
+    if let Some(token) = string_to_token(&word) {
+        source.replace_range(0..word.len(), "");
+        return Some(token);
+    }
+    None
+}
+
+/// @todo
+/// in tokenize method
+/// untill programm is not empty
+/// 1. try to read char
+/// 2. try to read string
+/// collect all tokens in progress
+
+
+
+
+
 fn read_string_literal(source: &mut String) -> Option<Token> {
     let mut result = String::new();
     for ch in source.chars() {
@@ -128,7 +199,25 @@ fn read_string_literal(source: &mut String) -> Option<Token> {
 }
 
 
+
+
+fn get_reserved_chars() -> HashSet<char> {
+    let mut reserved : HashSet<char> = HashSet::new();
+    reserved.insert(';');
+    reserved.insert('(');
+    reserved.insert(')');
+    reserved.insert('{');
+    reserved.insert('}');
+    reserved.insert('=');
+    return reserved;
+}
+
+
 fn main() -> io::Result<()>{
+
+
+
+
     let program = "4.44)";
     let tokens = tokenize(program);
     for token in tokens {
