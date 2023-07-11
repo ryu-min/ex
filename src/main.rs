@@ -15,10 +15,12 @@ use std::collections::HashSet;
     OpenCurlyBrace,
     CloseCurlyBrace,
     StringLiteral(String),
+    Name(String),
     IntLiteral(i64),
     FloatLiteral(f64),
     Exec
  }
+
  impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -36,30 +38,11 @@ use std::collections::HashSet;
             Token::Plus => write!(f, "PLUS TOKEN"),
             Token::Minus => write!(f, "MINUS TOKEN"),
             Token::Multi => write!(f, "MULTI TOKEN"),
-            Token::Devide => write!(f, "DEVIDE TOKEN"), 
+            Token::Devide => write!(f, "DEVIDE TOKEN"),
+            Token::Name(s) => write!(f, "NAME TOKEN {s}"), 
         }
     }
 }
-
-// fn tokenize(program: &str) -> Vec<Token> {
-//     let mut result: Vec<Token> = Vec::new();
-//     for line in program.lines().clone() {
-//         let splited_word = line.split(" ");
-//         for word in splited_word {
-//             if !word.is_empty() {
-//                 if let Some(tokens) = str_to_token(word) {
-//                     for token in tokens {
-//                         result.push(token);
-//                     }
-//                 } else {
-//                     println!("can't parse string {} as token", word)
-//                 }
-//             }
-//         }
-//     }
-//     return result;
-// }
-
 
 fn char_to_token(ch : char) -> Option<Token> {
     match ch {
@@ -72,11 +55,10 @@ fn char_to_token(ch : char) -> Option<Token> {
         '+' =>      Some(Token::Plus),
         '-' =>      Some(Token::Minus),
         '/' =>      Some(Token::Devide),
-        '*' =>      Some(Token::Minus),
+        '*' =>      Some(Token::Multi),
         _ =>        None
     }
 }
-
 
 fn read_token_from_char(source: &mut String) -> Option<Token> {
     if let Some(ch) = source.chars().next() {
@@ -89,7 +71,6 @@ fn read_token_from_char(source: &mut String) -> Option<Token> {
 }
 
 fn read_token_from_string(source: &mut String) -> Option<Token> {
-
     if source.is_empty() {
         return None
     }
@@ -97,14 +78,14 @@ fn read_token_from_string(source: &mut String) -> Option<Token> {
         return Some(token)
     } else if let Some(token) = read_reserved_token(source) {
         return Some(token);
-    }  else if let Some(token) = read_string_literal_token(source) {
+    } else if let Some(token) = read_string_literal_token(source) {
         return Some(token);
     } 
-    println!("return none from read token");
+    else if let Some(token) = read_name_token(source) {
+        return Some(token);
+    } 
     None
 }
-
-
 
 fn read_number_token(source: &mut String) -> Option<Token> {
     let mut result_string = String::new();
@@ -127,10 +108,8 @@ fn read_number_token(source: &mut String) -> Option<Token> {
     }
     source.replace_range(0..result_string.len(), "");
     if let Ok(f) = result_string.parse::<f64>() {
-        println!("return {f}");
         return Some(Token::FloatLiteral(f));
     } else if let Ok(i) = result_string.parse::<i64>() {
-        println!("return {i}");
         return Some(Token::IntLiteral(i));
     }
     None
@@ -138,7 +117,6 @@ fn read_number_token(source: &mut String) -> Option<Token> {
 
 
 fn read_reserved_token(source: &mut String) -> Option<Token> { 
-    // @todo write source.clear somewhere once
     if source == "exec" {
         source.clear();
         return Some(Token::Exec);
@@ -149,7 +127,7 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
     None
 }
 
-fn read_string_literal_token(source: &mut String) -> Option<Token> {
+fn read_name_token(source: &mut String) -> Option<Token> {
     let mut result = String::new();
     for ch in source.chars() {
         if ch.is_alphanumeric() {
@@ -162,33 +140,27 @@ fn read_string_literal_token(source: &mut String) -> Option<Token> {
         return None;
     }
     source.replace_range(0..result.len(), "");
-    return Some(Token::StringLiteral(result));
+    return Some(Token::Name(result));
+}
+
+fn read_string_literal_token(source: &mut String) -> Option<Token> {
+    if !source.starts_with("\"") {
+        return None;
+    }
+    let quote_indexes : Vec<_> = source.match_indices("\"").collect();
+    if quote_indexes.len() < 2 {
+        return None;
+    }
+    let end_literal = quote_indexes[1].0;
+    let string_literal = source[1..end_literal].to_string();
+    source.replace_range(..end_literal, "");
+    return Some(Token::StringLiteral(string_literal));
 }
 
 
-//     for line in program.lines().clone() {
-//         let splited_word = line.split(" ");
-//         for word in splited_word {
-//             if !word.is_empty() {
-//                 if let Some(tokens) = str_to_token(word) {
-//                     for token in tokens {
-//                         result.push(token);
-//                     }
-//                 } else {
-//                     println!("can't parse string {} as token", word)
-//                 }
-//             }
-//         }
-//     }
-//     return result;
-
-
-
 fn tokenize(program: &String) -> Vec<Token> {
-    let mut program_local = program.clone();
     let mut result : Vec<Token> = Vec::new();
     for line in program.lines().clone() {
-        println!("new line {line}");
         let splited_word = line.split(" ");
         for word in splited_word { 
             let mut word_string = word.to_string();
@@ -203,40 +175,31 @@ fn tokenize(program: &String) -> Vec<Token> {
             }
         }
     }
-
-    // while !program_local.is_empty() {
-    //     println!("program local {program_local}");
-    //     if let Some(token) = read_token_from_char(&mut program_local) {
-    //         result.push(token)
-    //     } else if let Some(token) = read_token_from_string(&mut program_local) {
-    //         result.push(token)    
-    //     } else {
-    //         break;
-    //     }
-    // }
     return result;
 }
 
-fn get_reserved_chars() -> HashSet<char> {
-    let mut reserved : HashSet<char> = HashSet::new();
-    reserved.insert(';');
-    reserved.insert('(');
-    reserved.insert(')');
-    reserved.insert('{');
-    reserved.insert('}');
-    reserved.insert('=');
-    reserved.insert('+');
-    reserved.insert('-');
-    reserved.insert('*');
-    reserved.insert('/');
-    return reserved;
-}
+// fn get_reserved_chars() -> HashSet<char> {
+//     let mut reserved : HashSet<char> = HashSet::new();
+//     reserved.insert(';');
+//     reserved.insert('(');
+//     reserved.insert(')');
+//     reserved.insert('{');
+//     reserved.insert('}');
+//     reserved.insert('=');
+//     reserved.insert('+');
+//     reserved.insert('-');
+//     reserved.insert('*');
+//     reserved.insert('/');
+//     return reserved;
+// }
 
 
 fn main() -> io::Result<()>{
-    let mut program = "(4.44+a+33-22.3 sdfsdf)){})\n 1 + 2";
-    //program = "3 + 2 + {}";
+
+    let program = "222 + (\"ddd\"  ) + ddd";
+
     let tokens = tokenize(&program.to_string());
+    println!("program is {program}");
     for token in tokens {
         println!("token is {}", token.to_string());
     }
