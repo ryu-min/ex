@@ -21,7 +21,7 @@ pub fn tokenize(program: &String) -> Vec<Token> {
     return result;
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Token {
     Var,
     Dot,
@@ -175,4 +175,45 @@ fn read_string_literal_token(source: &mut String) -> Option<Token> {
     let string_literal = source[1..end_literal].to_string();
     source.replace_range(..end_literal, "");
     return Some(Token::StringLiteral(string_literal));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn tokenizer_test() {
+        
+        let program = String::from("var x = 10 \n\
+                                            var y = 20.5 \n\
+                                            var s = \"str\"");
+                                            // x = x * ( x + y )");
+        let expected_tokens = vec![
+            Token::Var,
+            Token::Name(String::from("x")),
+            Token::Assignment,
+            Token::FloatLiteral(10.),
+
+            Token::Var,
+            Token::Name(String::from("y")),
+            Token::Assignment,
+            Token::FloatLiteral(20.5),
+
+            Token::Var,
+            Token::Name(String::from("s")),
+            Token::Assignment,
+            Token::StringLiteral(String::from("str")),
+
+            // Token::Name(String::from("x")),
+            // Token::Assignment,
+            // Token::Multi,
+            // Token::OpenBrace,
+            // Token::Name(String::from("x")),
+            // Token::Plus,
+            // Token::Name(String::from("y")),
+            // Token::CloseBrace
+        ];
+        let tokens = tokenize(&program);
+        assert_eq!(tokens, expected_tokens);
+
+    }
 }
