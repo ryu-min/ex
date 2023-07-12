@@ -1,5 +1,6 @@
 use std::io;
 mod tokenizer;
+mod parser;
 use crate::tokenizer::tokenize;
 
 fn main() -> io::Result<()>{
