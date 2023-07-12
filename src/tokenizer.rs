@@ -185,8 +185,8 @@ mod tests {
         
         let program = String::from("var x = 10 \n\
                                             var y = 20.5 \n\
-                                            var s = \"str\"");
-                                            // x = x * ( x + y )");
+                                            var s = \"str\" \\
+                                            x = x * ( x + y )");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -203,14 +203,15 @@ mod tests {
             Token::Assignment,
             Token::StringLiteral(String::from("str")),
 
-            // Token::Name(String::from("x")),
-            // Token::Assignment,
-            // Token::Multi,
-            // Token::OpenBrace,
-            // Token::Name(String::from("x")),
-            // Token::Plus,
-            // Token::Name(String::from("y")),
-            // Token::CloseBrace
+            Token::Name(String::from("x")),
+            Token::Assignment,
+            Token::Name(String::from("x")),
+            Token::Multi,
+            Token::OpenBrace,
+            Token::Name(String::from("x")),
+            Token::Plus,
+            Token::Name(String::from("y")),
+            Token::CloseBrace
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
