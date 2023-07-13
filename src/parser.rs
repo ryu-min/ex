@@ -1,4 +1,4 @@
-use crate::tokenizer::Token;
+use crate::tokenizer::{Token, tokenize};
 
 trait Expression {
     fn eval(&self) -> Option<f64>;
@@ -23,31 +23,31 @@ impl Expression for FloatExpression {
 
 struct BinaryExpression {
     op : char, 
-    left : f64,
-    right : f64
+    left : Box<dyn Expression>,
+    right : Box<dyn Expression>
 }
 impl BinaryExpression {
-    pub fn new(op: char, left: f64, right: f64) -> Self {
+    pub fn new(op: char, left: Box<dyn Expression>, right: Box<dyn Expression>) -> Self {
         BinaryExpression { op: op, left: left, right: right }
     }
 }
 
-///! @todo Bynary storee expression (left and right)
-
 impl Expression for BinaryExpression {
     fn eval(&self) -> Option<f64> {
-        match  self.op {
-            '+' => Some(self.left + self.right),
-            '-' => Some(self.left - self.right),
-            '*' => Some(self.left * self.right),
-            '/' => Some(self.left / self.right),
-            _ => None
+
+        if let (Some(l), Some(r) ) = (self.left.eval(), self.right.eval() ) {
+            match self.op {
+                '+' => return Some(l + r),
+                '-' => return Some(l - r),
+                '*' => return  Some(l * r),
+                '/' => return Some(l / r),
+                _ => return None
+            }
+        } else {
+            return None
         }
     }
 }
-
-
-
 
 struct Parser {
     tokens: Vec<Token>,
@@ -62,27 +62,56 @@ impl Parser {
         }
     }
 
-    pub fn parse(&self) -> f64 {
-        2.
+    pub fn parse(&mut self) -> Option<f64> {
+        self.expr().eval()
     } 
 
     fn expr(&mut self) -> Box<dyn Expression> {
-        self.binary()
+        self.aditive()
     }
 
-    fn binary(&mut self) -> Box<dyn Expression> {
-        let expr = self.unary();
+    fn aditive(&mut self) -> Box<dyn Expression> {
+        let mut result = self.multi();
         loop {
-            if let Some(next_token) = self.next_token() {
+            if let Some(next_token) = self.peek_current_token() {
                 match next_token {
-                    Token::Multi => {},
-                    Token::Devide => {},
-                    _ => {}
+                    Token::Plus => { 
+                        self.advance();
+                        result = Box::new(BinaryExpression::new('+', result, self.multi()));
+                    }
+                    Token::Minus => {
+                        self.aditive();
+                         result = Box::new(BinaryExpression::new('-', result, self.multi()));
+                    }
+                    _ => break
                 }
             } else {
                 break;
             }
         }
+        return result;
+    }
+
+    fn multi(&mut self) -> Box<dyn Expression> {
+        let mut result = self.unary();
+        loop {
+            if let Some(next_token) = self.peek_current_token() {
+                match next_token {
+                    Token::Multi => {
+                        self.advance();
+                        result = Box::new(BinaryExpression::new('*', result, self.unary())); 
+                    }
+                    Token::Devide => { 
+                        self.advance();
+                        result = Box::new(BinaryExpression::new('/', result, self.unary()));
+                    }
+                    _ => break
+                }
+            } else {
+                break;
+            }
+        }
+        return result;
     }
  
     fn unary(&mut self) -> Box<dyn Expression> {
@@ -90,25 +119,42 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Box<dyn Expression> {
-        let token = self.current_token();
-        match token {
-            Token::FloatLiteral(f) => {
-                Box::new(FloatExpression::new(f))
+        if let Some(token) = self.peek_current_token() {
+            match token {
+                Token::FloatLiteral(f) => {
+                    self.advance();
+                    return Box::new(FloatExpression::new(f));
+                }
+                _ => {
+                    self.advance();
+                    return Box::new(FloatExpression::new(69.));    
+                }    
             }
-            _ => {
-                Box::new(FloatExpression::new(69.))    
-            }
-            
+        } else {
+            return Box::new(FloatExpression::new(69.));     
         }
     }
 
-    fn current_token(&self) -> Token {
-        return self.tokens[self.pos].clone();
+    fn peek_current_token(&self) -> Option<Token> {
+        if self.pos >= self.tokens.len() {
+            return None
+        }
+        return Some(self.tokens[self.pos].clone());
+
     }
 
-    fn next_token(&self) -> Option<&Token> {
-        self.tokens.get(self.pos + 1)
+    fn peek_next_token(&mut self) -> Option<Token> {
+        if self.pos + 1 >= self.tokens.len() {
+            return None
+        }
+        return Some(self.tokens[self.pos + 1].clone());
     }
+
+    fn advance(&mut self) {
+        self.pos += 1;
+    }
+
+
 
 
     
@@ -119,7 +165,9 @@ mod tests {
     use super::*;
     #[test]
     fn parser_test() {
-        let a : Box<dyn Expression> = Box::new( FloatExpression::new(2.) );
-        assert_eq!(a.eval(), 2.); 
+        let program = "2 + 2 + 100 * 2".to_string();
+        let tokens = tokenize(&program);
+        let mut p = Parser::new(&tokens);
+        assert_eq!(p.parse().unwrap(), 204.);
     }
 }
