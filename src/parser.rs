@@ -1,12 +1,19 @@
 use crate::tokenizer::Token;
 use std::mem;
 
-trait Expression {
-    fn eval(&self) -> Option<f64>;
+
+pub trait ExpressionVisitor {
+    fn visit_float_expression(&self, expr: &FloatExpression) -> f64;
+    fn visit_binary_expression(&self, expr: &BinaryExpression) -> f64;
 }
 
-struct FloatExpression {
-    f : f64
+pub trait Expression {
+    fn eval(&self) -> Option<f64>;
+    fn accept(&self, expr : & dyn ExpressionVisitor) -> f64;
+}
+
+pub struct FloatExpression {
+    pub f : f64
 }
 
 impl FloatExpression {
@@ -20,12 +27,15 @@ impl Expression for FloatExpression {
     fn eval(&self) -> Option<f64> {
         return Some(self.f);
     }
+    fn accept(&self, expr : & dyn ExpressionVisitor) -> f64 {
+        return expr.visit_float_expression(self);
+    }
 }
 
-struct BinaryExpression {
-    op : Token, 
-    left : Box<dyn Expression>,
-    right : Box<dyn Expression>
+pub struct BinaryExpression {
+    pub op : Token, 
+    pub left : Box<dyn Expression>,
+    pub right : Box<dyn Expression>
 }
 impl BinaryExpression {
     pub fn new(op: Token, left: Box<dyn Expression>, right: Box<dyn Expression>) -> Self {
@@ -48,9 +58,13 @@ impl Expression for BinaryExpression {
             return None
         }
     }
+
+    fn accept(&self,expr : & dyn ExpressionVisitor) -> f64 {
+        return expr.visit_binary_expression(self);
+    }
 }
 
-struct Parser {
+pub struct Parser {
     tokens: Vec<Token>,
     pos: usize
 }
@@ -135,12 +149,12 @@ impl Parser {
 
     }
 
-    fn peek_next_token(&mut self) -> Option<Token> {
-        if self.pos + 1 >= self.tokens.len() {
-            return None
-        }
-        return Some(self.tokens[self.pos + 1].clone());
-    }
+    // fn peek_next_token(&mut self) -> Option<Token> {
+    //     if self.pos + 1 >= self.tokens.len() {
+    //         return None
+    //     }
+    //     return Some(self.tokens[self.pos + 1].clone());
+    // }
 
     fn advance(&mut self) {
         self.pos += 1;
