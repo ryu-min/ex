@@ -1,28 +1,23 @@
 use crate::parser::{Expression, ExpressionVisitor};
 use crate::tokenizer::Token;
 
-pub struct Interpreter{
-    expr : Box<dyn Expression>
-}
+pub struct Interpreter;
 
 impl Interpreter {
-    pub fn new(expr : Box<dyn Expression>) -> Interpreter {
-        Interpreter {
-            expr : expr,
-        }
+    pub fn new() -> Interpreter {
+        Interpreter {}
     } 
-
-    pub fn eval(&mut self) -> f64 {
-        return self.expr.accept(self);
+    pub fn eval(&mut self, expr : Box<dyn Expression>) -> f64 {
+        return expr.accept(self);
     }
 }
 
 impl ExpressionVisitor for Interpreter {
-    fn visit_float_expression(&self, expr: &crate::parser::FloatExpression) -> f64 {
+    fn visit_float_expression(&mut self, expr: &crate::parser::FloatExpression) -> f64 {
         return expr.f;
     }
 
-    fn visit_binary_expression(&self, expr: &crate::parser::BinaryExpression) -> f64 {
+    fn visit_binary_expression(&mut self, expr: &crate::parser::BinaryExpression) -> f64 {
         let l = expr.left.accept(self);
         let r = expr.right.accept(self);
         let op = expr.op.clone();
@@ -37,7 +32,7 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_unary_expression(&self, un_expr: &crate::parser::UnaryExpression) -> f64 {
+    fn visit_unary_expression(&mut self, un_expr: &crate::parser::UnaryExpression) -> f64 {
         let op = un_expr.op.clone();
         let expr_result = un_expr.expr.accept(self);
         match op {
@@ -64,7 +59,7 @@ mod tests {
         for (prog, exp_res) in test_map.iter() {
             let prog = prog.to_string();
             let expr = Parser::new(&tokenize(&prog)).parse();
-            let res = Interpreter::new(expr).eval();
+            let res = Interpreter::new().eval(expr);
             assert_eq!(res, *exp_res);
         }
     }
