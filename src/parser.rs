@@ -4,18 +4,17 @@ use std::mem;
 
 pub trait ExpressionVisitor {
     fn visit_float_expression(&self, expr: &FloatExpression) -> f64;
+    fn visit_unary_expression(&self, expr: &UnaryExpression) -> f64;
     fn visit_binary_expression(&self, expr: &BinaryExpression) -> f64;
 }
 
 pub trait Expression {
-    fn eval(&self) -> Option<f64>;
     fn accept(&self, expr : & dyn ExpressionVisitor) -> f64;
 }
 
 pub struct FloatExpression {
     pub f : f64
 }
-
 impl FloatExpression {
     pub fn new(f: f64) -> Self {
         FloatExpression {
@@ -24,13 +23,29 @@ impl FloatExpression {
     }
 }
 impl Expression for FloatExpression {
-    fn eval(&self) -> Option<f64> {
-        return Some(self.f);
-    }
     fn accept(&self, expr : & dyn ExpressionVisitor) -> f64 {
         return expr.visit_float_expression(self);
     }
 }
+
+pub struct UnaryExpression {
+    pub op: Token,
+    pub expr : Box<dyn Expression>
+}
+impl UnaryExpression {
+    pub fn new(op: Token, expr: Box<dyn Expression>) -> Self {
+        UnaryExpression {
+            op : op,
+            expr : expr
+        }
+    }
+}
+impl Expression for UnaryExpression {
+    fn accept(&self, expr : & dyn ExpressionVisitor) -> f64 {
+        return expr.visit_unary_expression(self);
+    }
+}
+
 
 pub struct BinaryExpression {
     pub op : Token, 
@@ -42,23 +57,7 @@ impl BinaryExpression {
         BinaryExpression { op: op, left: left, right: right }
     }
 }
-
 impl Expression for BinaryExpression {
-    fn eval(&self) -> Option<f64> {
-
-        if let (Some(l), Some(r) ) = (self.left.eval(), self.right.eval() ) {
-            match self.op {
-                Token::Plus     => return Some(l + r),
-                Token::Minus    => return Some(l - r),
-                Token::Multi    => return  Some(l * r),
-                Token::Devide   => return Some(l / r),
-                _ => return None
-            }
-        } else {
-            return None
-        }
-    }
-
     fn accept(&self,expr : & dyn ExpressionVisitor) -> f64 {
         return expr.visit_binary_expression(self);
     }
@@ -135,6 +134,10 @@ impl Parser {
                 self.eat(Token::CloseBrace);
                 return result; 
             }
+            Token::Plus|Token::Minus => {
+                self.advance();
+                return Box::new(UnaryExpression::new(current_token, self.factor()));
+            }
             _ => {
                 panic!("unreachable");
             }
@@ -171,19 +174,4 @@ impl Parser {
             panic!("exptect token {}, found no token", token.to_string());
         }
     }    
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::tokenizer::tokenize;
-    #[test]
-    fn parser_test() {
-        let program1 = "(2 + 2) * 2".to_string();
-        let program2 = "2 + 2 * 2".to_string();
-        let res1 = Parser::new(&tokenize(&program1)).parse().eval().unwrap();
-        let res2 = Parser::new(&tokenize(&program2)).parse().eval().unwrap();
-        assert_eq!(res1, 8.);
-        assert_eq!(res2, 6.);   
-    }
 }

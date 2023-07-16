@@ -32,7 +32,19 @@ impl ExpressionVisitor for Interpreter {
             Token::Multi => return l * r,
             Token::Devide => return  l / r,
             _ => {
-                panic!("unsupported op {}", op.to_string());
+                panic!("unsupported binary op {}", op.to_string());
+            }
+        }
+    }
+
+    fn visit_unary_expression(&self, un_expr: &crate::parser::UnaryExpression) -> f64 {
+        let op = un_expr.op.clone();
+        let expr_result = un_expr.expr.accept(self);
+        match op {
+            Token::Plus => return expr_result,
+            Token::Minus => return -expr_result,
+            _ => {
+                panic!("unsupported unary op {}", op.to_string());    
             }
         }
     }
@@ -40,19 +52,20 @@ impl ExpressionVisitor for Interpreter {
 
 
 mod tests {
-    use super::*;
-    use crate::parser::Parser;
-    use crate::tokenizer::tokenize;
+    use std::collections::HashMap;
+    use crate::{parser::Parser, tokenizer::tokenize, interp::Interpreter};
     #[test]
-    fn parser_test() {
-        let program1 = "(2 + 2) * 2".to_string();
-        let program2 = "2 + 2 * 2 * 2".to_string();
-        let expr1 = Parser::new(&tokenize(&program1)).parse();
-        let expr2 = Parser::new(&tokenize(&program2)).parse();
-        let res1 = Interpreter::new(expr1).eval();
-        let res2 = Interpreter::new(expr2).eval();
-        assert_eq!(res1, 8.);
-        assert_eq!(res2, 10.);   
+    fn iterp_test() {
+        let mut test_map = HashMap::new();
+        test_map.insert("(2 + 2) * 2", 8.);
+        test_map.insert("2 + 2 * 2 * 2", 10.);
+        test_map.insert("-2 + 2", 0.);
+        test_map.insert("-(2 + 2 * 2)", -6.);
+        for (prog, exp_res) in test_map.iter() {
+            let prog = prog.to_string();
+            let expr = Parser::new(&tokenize(&prog)).parse();
+            let res = Interpreter::new(expr).eval();
+            assert_eq!(res, *exp_res);
+        }
     }
 }
-
