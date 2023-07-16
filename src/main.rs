@@ -14,6 +14,8 @@ fn main() -> io::Result<()>{
     test_map.insert("2 + 2 * 2 * 2", 10.);
     test_map.insert("-2 + 2", 0.);
     test_map.insert("-(2 + 2 * 2)", -6.);
+    test_map.insert("10 / 5 + -3", -1.);
+    
     for (prog, _) in test_map.iter() {
         let prog = prog.to_string();
         let expr = Parser::new(&tokenize(&prog)).parse();

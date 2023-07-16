@@ -3,13 +3,13 @@ use std::mem;
 
 
 pub trait ExpressionVisitor {
-    fn visit_float_expression(&mut self, expr: &FloatExpression) -> f64;
-    fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> f64;
-    fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> f64;
+    fn visit_float_expression(&mut self, expr: &FloatExpression);
+    fn visit_unary_expression(&mut self, expr: &UnaryExpression);
+    fn visit_binary_expression(&mut self, expr: &BinaryExpression);
 }
 
 pub trait Expression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) -> f64;
+    fn accept(&self, expr : & mut dyn ExpressionVisitor);
 }
 
 pub struct FloatExpression {
@@ -23,8 +23,8 @@ impl FloatExpression {
     }
 }
 impl Expression for FloatExpression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) -> f64 {
-        return expr.visit_float_expression(self);
+    fn accept(&self, expr : & mut dyn ExpressionVisitor) {
+        expr.visit_float_expression(self);
     }
 }
 
@@ -41,8 +41,8 @@ impl UnaryExpression {
     }
 }
 impl Expression for UnaryExpression {
-    fn accept(&self, expr : & mut  dyn ExpressionVisitor) -> f64 {
-        return expr.visit_unary_expression(self);
+    fn accept(&self, expr : & mut  dyn ExpressionVisitor) {
+        expr.visit_unary_expression(self);
     }
 }
 
@@ -58,8 +58,8 @@ impl BinaryExpression {
     }
 }
 impl Expression for BinaryExpression {
-    fn accept(&self,expr : & mut dyn ExpressionVisitor) -> f64 {
-        return expr.visit_binary_expression(self);
+    fn accept(&self,expr : & mut dyn ExpressionVisitor) {
+        expr.visit_binary_expression(self);
     }
 }
 
@@ -93,7 +93,6 @@ impl Parser {
                         break;
                     }
                 }
-
             } else {
                 break;
             }

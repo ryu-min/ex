@@ -1,47 +1,97 @@
 use crate::parser::{Expression, ExpressionVisitor};
 use crate::tokenizer::Token;
 
-pub struct Interpreter;
+#[derive(Clone, PartialEq, Debug)]
+enum ValueVariant {
+    String(String),
+    Integer(i64),
+    Float(f64)
+}
+
+pub struct Interpreter {
+    values_stack: Vec<ValueVariant>
+}
 
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter {}
+        Interpreter {
+            values_stack : vec![]
+        }
     } 
     pub fn eval(&mut self, expr : Box<dyn Expression>) -> f64 {
-        return expr.accept(self);
+        expr.accept(self);
+        let result = self.values_stack.pop().unwrap();
+        match result {
+            ValueVariant::Float(f) => {
+                return f;
+            }
+            _ => {
+                panic!("result should be float");
+            }
+        }
     }
 }
 
 impl ExpressionVisitor for Interpreter {
-    fn visit_float_expression(&mut self, expr: &crate::parser::FloatExpression) -> f64 {
-        return expr.f;
+    fn visit_float_expression(&mut self, expr: &crate::parser::FloatExpression) {
+        self.values_stack.push(ValueVariant::Float(expr.f));
     }
 
-    fn visit_binary_expression(&mut self, expr: &crate::parser::BinaryExpression) -> f64 {
-        let l = expr.left.accept(self);
-        let r = expr.right.accept(self);
+    fn visit_binary_expression(&mut self, expr: &crate::parser::BinaryExpression) {
+        expr.left.accept(self);
+        expr.right.accept(self);
         let op = expr.op.clone();
-        match op {
-            Token::Plus => return l + r,
-            Token::Minus => return l - r,
-            Token::Multi => return l * r,
-            Token::Devide => return  l / r,
-            _ => {
-                panic!("unsupported binary op {}", op.to_string());
+    
+        if let (Some(r), Some(l)) = (self.values_stack.pop(), self.values_stack.pop()) {
+            match (l, r) {
+                (ValueVariant::Float(l_float), ValueVariant::Float(r_float)) => {
+                    let mut res = 0.0;
+                    match op {
+                        Token::Plus => res = l_float + r_float,
+                        Token::Minus => res = l_float - r_float,
+                        Token::Multi => res = l_float * r_float,
+                        Token::Devide => res = l_float / r_float,
+                        _ => {
+                            panic!("unsupported binary op {}", op.to_string());
+                        }
+                    }
+                    self.values_stack.push(ValueVariant::Float(res));
+                }
+                _ => {
+                    panic!("for now binary operation supported only with float types");
+                }
             }
+        } else {
+            panic!("empty stack in bynary expression");
         }
     }
 
-    fn visit_unary_expression(&mut self, un_expr: &crate::parser::UnaryExpression) -> f64 {
+    fn visit_unary_expression(&mut self, un_expr: &crate::parser::UnaryExpression) {
+        un_expr.expr.accept(self);
         let op = un_expr.op.clone();
-        let expr_result = un_expr.expr.accept(self);
-        match op {
-            Token::Plus => return expr_result,
-            Token::Minus => return -expr_result,
-            _ => {
-                panic!("unsupported unary op {}", op.to_string());    
+        if let Some(val) = self.values_stack.pop() {
+            match val {
+                ValueVariant::Float(f) => {
+                    match op {
+                        Token::Plus => {
+                            self.values_stack.push(ValueVariant::Float(f));            
+                        } 
+                        Token::Minus => {
+                            self.values_stack.push(ValueVariant::Float(-f));            
+                        }
+                        _ => {
+                            panic!("unsupported unary op {}", op.to_string());    
+                        }
+                    }
+                },
+                _ => {
+                    panic!("for now unary operation supported only with float types");    
+                }
             }
+        } else {
+            panic!("empty stack in unary expression");    
         }
+
     }
 }
 
@@ -56,6 +106,7 @@ mod tests {
         test_map.insert("2 + 2 * 2 * 2", 10.);
         test_map.insert("-2 + 2", 0.);
         test_map.insert("-(2 + 2 * 2)", -6.);
+        test_map.insert("10 / 5 + -3", -1.);
         for (prog, exp_res) in test_map.iter() {
             let prog = prog.to_string();
             let expr = Parser::new(&tokenize(&prog)).parse();
