@@ -1,4 +1,5 @@
-use crate::tokenizer::{Token, tokenize};
+use crate::tokenizer::Token;
+use std::mem;
 
 trait Expression {
     fn eval(&self) -> Option<f64>;
@@ -22,12 +23,12 @@ impl Expression for FloatExpression {
 }
 
 struct BinaryExpression {
-    op : char, 
+    op : Token, 
     left : Box<dyn Expression>,
     right : Box<dyn Expression>
 }
 impl BinaryExpression {
-    pub fn new(op: char, left: Box<dyn Expression>, right: Box<dyn Expression>) -> Self {
+    pub fn new(op: Token, left: Box<dyn Expression>, right: Box<dyn Expression>) -> Self {
         BinaryExpression { op: op, left: left, right: right }
     }
 }
@@ -37,10 +38,10 @@ impl Expression for BinaryExpression {
 
         if let (Some(l), Some(r) ) = (self.left.eval(), self.right.eval() ) {
             match self.op {
-                '+' => return Some(l + r),
-                '-' => return Some(l - r),
-                '*' => return  Some(l * r),
-                '/' => return Some(l / r),
+                Token::Plus     => return Some(l + r),
+                Token::Minus    => return Some(l - r),
+                Token::Multi    => return  Some(l * r),
+                Token::Devide   => return Some(l / r),
                 _ => return None
             }
         } else {
@@ -62,28 +63,43 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Option<f64> {
-        self.expr().eval()
+    pub fn parse(&mut self) -> Box<dyn Expression> {
+        self.expr()
     } 
 
     fn expr(&mut self) -> Box<dyn Expression> {
-        self.aditive()
+        let mut result = self.temr();
+        loop {
+            if let Some(token) = self.peek_current_token() {
+                match token {
+                    Token::Plus | Token::Minus => {
+                        self.advance();
+                        result =  Box::new(BinaryExpression::new(token, result, self.temr()));
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+
+            } else {
+                break;
+            }
+        }
+        return result;
     }
 
-    fn aditive(&mut self) -> Box<dyn Expression> {
-        let mut result = self.multi();
+    fn temr(&mut self) -> Box<dyn Expression> {
+        let mut result = self.factor();
         loop {
-            if let Some(next_token) = self.peek_current_token() {
-                match next_token {
-                    Token::Plus => { 
+            if let Some(token) = self.peek_current_token() {
+                match token {
+                    Token::Multi | Token::Devide => {
                         self.advance();
-                        result = Box::new(BinaryExpression::new('+', result, self.multi()));
+                        result =  Box::new(BinaryExpression::new(token, result, self.factor()));
                     }
-                    Token::Minus => {
-                        self.aditive();
-                         result = Box::new(BinaryExpression::new('-', result, self.multi()));
+                    _ => {
+                        break;
                     }
-                    _ => break
                 }
             } else {
                 break;
@@ -92,46 +108,22 @@ impl Parser {
         return result;
     }
 
-    fn multi(&mut self) -> Box<dyn Expression> {
-        let mut result = self.unary();
-        loop {
-            if let Some(next_token) = self.peek_current_token() {
-                match next_token {
-                    Token::Multi => {
-                        self.advance();
-                        result = Box::new(BinaryExpression::new('*', result, self.unary())); 
-                    }
-                    Token::Devide => { 
-                        self.advance();
-                        result = Box::new(BinaryExpression::new('/', result, self.unary()));
-                    }
-                    _ => break
-                }
-            } else {
-                break;
+    fn factor(&mut self) -> Box<dyn Expression> {
+        let current_token = self.peek_current_token().unwrap();
+        match current_token {
+            Token::FloatLiteral(f) => {
+                self.advance();
+                return Box::new(FloatExpression::new(f));
             }
-        }
-        return result;
-    }
- 
-    fn unary(&mut self) -> Box<dyn Expression> {
-        return self.primary()
-    }
-
-    fn primary(&mut self) -> Box<dyn Expression> {
-        if let Some(token) = self.peek_current_token() {
-            match token {
-                Token::FloatLiteral(f) => {
-                    self.advance();
-                    return Box::new(FloatExpression::new(f));
-                }
-                _ => {
-                    self.advance();
-                    return Box::new(FloatExpression::new(69.));    
-                }    
+            Token::OpenBrace => {
+                self.advance();
+                let result = self.expr();
+                self.eat(Token::CloseBrace);
+                return result; 
             }
-        } else {
-            return Box::new(FloatExpression::new(69.));     
+            _ => {
+                panic!("unreachable");
+            }
         }
     }
 
@@ -154,20 +146,30 @@ impl Parser {
         self.pos += 1;
     }
 
-
-
-
-    
+    fn eat(&mut self, token: Token) {
+        if let Some(current) = self.peek_current_token() {
+            if  mem::discriminant(&current) == mem::discriminant(&token) {
+                self.advance();
+            } else {
+                panic!("exprected token {}, find token {}", token.to_string(), current.to_string() );
+            }
+        } else {
+            panic!("exptect token {}, found no token", token.to_string());
+        }
+    }    
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tokenizer::tokenize;
     #[test]
     fn parser_test() {
-        let program = "2 + 2 + 100 * 2".to_string();
-        let tokens = tokenize(&program);
-        let mut p = Parser::new(&tokens);
-        assert_eq!(p.parse().unwrap(), 204.);
+        let program1 = "(2 + 2) * 2".to_string();
+        let program2 = "2 + 2 * 2".to_string();
+        let res1 = Parser::new(&tokenize(&program1)).parse().eval().unwrap();
+        let res2 = Parser::new(&tokenize(&program2)).parse().eval().unwrap();
+        assert_eq!(res1, 8.);
+        assert_eq!(res2, 6.);   
     }
 }
