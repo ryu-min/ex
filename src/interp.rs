@@ -32,9 +32,23 @@ impl Interpreter {
 }
 
 impl ExpressionVisitor for Interpreter {
-    fn visit_float_expression(&mut self, expr: &crate::parser::FloatExpression) -> ExpressionVisitResult {
+    fn visit_float_literal_expression(&mut self, expr: &crate::parser::FloatLiteralExpression) -> ExpressionVisitResult {
         self.values_stack.push(ValueVariant::Float(expr.f));
         Ok(())
+    }
+
+    fn visit_string_literal_expression(&mut self, expr: &crate::parser::StringLiteralExpression) -> ExpressionVisitResult {
+        self.values_stack.push(ValueVariant::String(expr.s.clone()));
+        Ok(())
+    }
+
+    fn visit_name_expression(&mut self, expr: &crate::parser::NameExpression) -> ExpressionVisitResult {
+        if let Some(value) = self.var_maps.get(&expr.name) {
+            self.values_stack.push(value.clone());
+            return Ok(());
+        } else {
+            return Err(format!("unknown name '{}'", &expr.name));
+        }
     }
 
     fn visit_unary_expression(&mut self, un_expr: &crate::parser::UnaryExpression) -> ExpressionVisitResult {
@@ -80,10 +94,20 @@ impl ExpressionVisitor for Interpreter {
                         Token::Multi => res = l_float * r_float,
                         Token::Devide => res = l_float / r_float,
                         _ => {
-                            return Err(format!("unsupported binary op {}", op.to_string()));
+                            return Err(format!("binary op {} not supported for float's", op.to_string()));
                         }
                     }
                     self.values_stack.push(ValueVariant::Float(res));
+                }
+                (ValueVariant::String(l_string), ValueVariant::String(r_string)) => {
+                    match op {
+                        Token::Plus => {
+                            self.values_stack.push(ValueVariant::String(l_string + &r_string));
+                        }
+                        _ => {
+                            return Err(format!("binary op {} not supported for strings", op.to_string()));
+                        }
+                    }
                 }
                 _ => {
                     return Err("for now binary operation supported only with float types".to_string());
@@ -112,15 +136,6 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_name_expression(&mut self, expr: &crate::parser::NameExpression) -> ExpressionVisitResult {
-        if let Some(value) = self.var_maps.get(&expr.name) {
-            self.values_stack.push(value.clone());
-            return Ok(());
-        } else {
-            return Err(format!("unknown name '{}'", &expr.name));
-        }
-    }
-
 }
 
 
@@ -130,21 +145,14 @@ mod tests {
     #[test]
     fn iterp_test() {
         let mut test_map = HashMap::new();
-
-        
         test_map.insert("var a = 2 + 2", ValueVariant::Float(4.0));
         test_map.insert("var a  =   (2 + 2) * 2", ValueVariant::Float(8.));
         test_map.insert("var a  = 2 + 2 * 2 * 2", ValueVariant::Float((10.)));
         test_map.insert("var b  = 0 - 3 \n\
                            var a = b - 1", ValueVariant::Float((-4.)));
-        // test_map.insert("-2 + 2", 0.);
-        // test_map.insert("-(2 + 2 * 2)", -6.);
-        // test_map.insert("10 / 5 + -3 ", -1.);
-        // test_map.insert("\n\
-        //                    10 / 5 + -3 ", -1.);
-        // test_map.insert("10 / 5 + \n\
-        //                    -3 ", -1.);
-
+        test_map.insert("var a  = \"aa\" + \"bb\"", ValueVariant::String(String::from("aabb")));
+        test_map.insert("var b  = \"aa\" \n\
+                           var a = b + \"bb\" ", ValueVariant::String(String::from("aabb")));
         for (prog, exp_res) in test_map.iter() {
             let prog = prog.to_string();
             let expr = Parser::new(&tokenize(&prog)).parse().unwrap();

@@ -4,33 +4,49 @@ use std::mem;
 pub type ExpressionVisitResult = Result<(), String>;
 
 pub trait ExpressionVisitor {
-    fn visit_float_expression(&mut self, expr: &FloatExpression) -> ExpressionVisitResult;
+    fn visit_float_literal_expression(&mut self, expr: &FloatLiteralExpression) -> ExpressionVisitResult;
+    fn visit_string_literal_expression(&mut self, expr: &StringLiteralExpression) -> ExpressionVisitResult;
+    fn visit_name_expression(&mut self, expr: &NameExpression) -> ExpressionVisitResult;
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
-    fn visit_name_expression(&mut self, expr: &NameExpression) -> ExpressionVisitResult;
 }
 
 pub trait Expression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult;
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult;
 }
 
-pub struct FloatExpression {
+pub struct FloatLiteralExpression {
     pub f : f64
 } 
-impl FloatExpression {
+impl FloatLiteralExpression {
     pub fn new(f: f64) -> Self {
-        FloatExpression {
+        FloatLiteralExpression {
             f : f
         }
     }
 }
-impl Expression for FloatExpression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) -> ExpressionVisitResult {
-        expr.visit_float_expression(self)
+impl Expression for FloatLiteralExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) -> ExpressionVisitResult {
+        visitor.visit_float_literal_expression(self)
     }
 }
+
+pub struct StringLiteralExpression {
+    pub s : String
+}
+impl StringLiteralExpression {
+    pub fn new(s: String) -> Self {
+        Self { s : s }
+    }
+}
+impl Expression for StringLiteralExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_string_literal_expression(self)
+    }
+}
+
 
 pub struct UnaryExpression {
     pub op: Token,
@@ -45,8 +61,8 @@ impl UnaryExpression {
     }
 }
 impl Expression for UnaryExpression {
-    fn accept(&self, expr : & mut  dyn ExpressionVisitor) -> ExpressionVisitResult {
-        expr.visit_unary_expression(self)
+    fn accept(&self, visitor : & mut  dyn ExpressionVisitor) -> ExpressionVisitResult {
+        visitor.visit_unary_expression(self)
     }
 }
 
@@ -62,8 +78,8 @@ impl BinaryExpression {
     }
 }
 impl Expression for BinaryExpression {
-    fn accept(&self,expr : & mut dyn ExpressionVisitor) -> ExpressionVisitResult {
-        expr.visit_binary_expression(self)
+    fn accept(&self,visitor : & mut dyn ExpressionVisitor) -> ExpressionVisitResult {
+        visitor.visit_binary_expression(self)
     }
 }
 
@@ -77,8 +93,8 @@ impl AssignmentExpression {
     } 
 }
 impl Expression for AssignmentExpression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
-        expr.visit_assignment_expression(self)
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_assignment_expression(self)
     }
 }
 
@@ -93,8 +109,8 @@ impl StatementListExpression {
     }
 }
 impl Expression for StatementListExpression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
-        expr.visit_statement_list_expression(self)
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_statement_list_expression(self)
     }
 }
 
@@ -107,8 +123,8 @@ impl NameExpression {
     }
 }
 impl Expression for NameExpression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
-        expr.visit_name_expression(self)
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_name_expression(self)
     }
 }
 
@@ -249,13 +265,17 @@ impl Parser {
     }
     
     /// 'factor' function match next syntax pattern:
-    /// FLOAT | NAME | {expr}
+    /// FLOAT_LITERAL | STRING_LITERAL | NAME | {expr}
     fn factor(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
             Token::FloatLiteral(f) => {
                 self.advance();
-                return Ok(Box::new(FloatExpression::new(f)));
+                return Ok(Box::new(FloatLiteralExpression::new(f)));
+            }
+            Token::StringLiteral(s) => {
+                self.advance();
+                return Ok(Box::new(StringLiteralExpression::new(s)));
             }
             Token::OpenBrace => {
                 self.advance();
