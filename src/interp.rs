@@ -49,24 +49,23 @@ impl ExpressionVisitor for Interpreter {
                     match op {
                         Token::Plus => {
                             self.values_stack.push(ValueVariant::Float(f));  
-                            Ok(())          
                         } 
                         Token::Minus => {
                             self.values_stack.push(ValueVariant::Float(-f));            
-                            Ok(())
                         }
                         _ => {
-                            Err(format!("unsupported unary op {}", op.to_string()))    
+                            return Err(format!("unsupported unary op {}", op.to_string()));
                         }
                     }
                 },
                 _ => {
-                    Err("for now unary operation supported only with float types".to_string())    
+                    return Err("for now unary operation supported only with float types".to_string());    
                 }
             }
         } else {
-            Err("empty stack in unary expression".to_string())  
+            return Err("empty stack in unary expression".to_string()); 
         }
+        Ok(())          
 
     }
 
@@ -88,7 +87,6 @@ impl ExpressionVisitor for Interpreter {
                         }
                     }
                     self.values_stack.push(ValueVariant::Float(res));
-                    Ok(())
                 }
                 _ => {
                     return Err("for now binary operation supported only with float types".to_string());
@@ -97,7 +95,9 @@ impl ExpressionVisitor for Interpreter {
         } else {
             return Err("empty stack in bynary expression".to_string());
         }
+        Ok(())
     }
+
 }
 
 
