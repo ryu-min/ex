@@ -111,7 +111,14 @@ mod tests {
         test_map.insert("2 + 2 * 2 * 2", 10.);
         test_map.insert("-2 + 2", 0.);
         test_map.insert("-(2 + 2 * 2)", -6.);
-        test_map.insert("10 / 5 + -3", -1.);
+        test_map.insert("10 / 5 + -3 ", -1.);
+        test_map.insert("\n\
+                           10 / 5 + -3 ", -1.);
+        // test_map.insert("10 / 5 + \n\
+        //                    -3 ", -1.);
+        
+
+
         for (prog, exp_res) in test_map.iter() {
             let prog = prog.to_string();
             let expr = Parser::new(&tokenize(&prog)).parse().unwrap();

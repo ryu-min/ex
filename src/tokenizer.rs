@@ -17,6 +17,7 @@ pub fn tokenize(program: &String) -> Vec<Token> {
                 }
             }
         }
+        // result.push(Token::NewLine);
     }
     return result;
 }
@@ -38,7 +39,8 @@ pub enum Token {
     Name(String),
     IntLiteral(i64),
     FloatLiteral(f64),
-    Exec
+    Exec,
+    NewLine
  }
 
  impl fmt::Display for Token {
@@ -60,6 +62,7 @@ pub enum Token {
             Token::Multi => write!(f, "MULTI TOKEN"),
             Token::Devide => write!(f, "DEVIDE TOKEN"),
             Token::Name(s) => write!(f, "NAME TOKEN {s}"), 
+            Token::NewLine => write!(f, "NEW LINE TOKEN")
         }
     }
 }
@@ -192,16 +195,19 @@ mod tests {
             Token::Name(String::from("x")),
             Token::Assignment,
             Token::FloatLiteral(10.),
+            // Token::NewLine,
 
             Token::Var,
             Token::Name(String::from("y")),
             Token::Assignment,
             Token::FloatLiteral(20.5),
+            // Token::NewLine,
 
             Token::Var,
             Token::Name(String::from("s")),
             Token::Assignment,
             Token::StringLiteral(String::from("str")),
+            // Token::NewLine,
 
             Token::Name(String::from("x")),
             Token::Assignment,
@@ -211,7 +217,8 @@ mod tests {
             Token::Name(String::from("x")),
             Token::Plus,
             Token::Name(String::from("y")),
-            Token::CloseBrace
+            Token::CloseBrace,
+            // Token::NewLine
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);

@@ -82,7 +82,9 @@ impl Parser {
     pub fn parse(&mut self) -> ParseResult {
         self.expr()
     } 
-
+    
+    /// 'expr' function match next syntax pattern:
+    /// term [[PLUS|MINUS] term]*
     fn expr(&mut self) -> ParseResult {
         let mut result = self.temr()?;
         loop {
@@ -104,6 +106,8 @@ impl Parser {
         return Ok(result);
     }
 
+    /// 'term' function match next syntax pattern:
+    /// factor [[MUL|DIV] factor]*
     fn temr(&mut self) -> ParseResult {
         let mut result = self.factor()?;
         loop {
@@ -124,7 +128,9 @@ impl Parser {
         }
         return Ok(result);
     }
-
+    
+    /// 'factor' function match next syntax pattern:
+    /// FLOAT | ( expr )
     fn factor(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
@@ -144,6 +150,7 @@ impl Parser {
                 return Ok(Box::new(UnaryExpression::new(current_token, expr)));
             }
             _ => {
+                println!("error in factor with token {}", current_token.to_string());
                 return Err("unreachable".to_string());
             }
         }
