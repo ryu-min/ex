@@ -1,15 +1,16 @@
 use crate::tokenizer::Token;
 use std::mem;
 
+pub type ExpressionVisitResult = Result<(), String>;
 
 pub trait ExpressionVisitor {
-    fn visit_float_expression(&mut self, expr: &FloatExpression);
-    fn visit_unary_expression(&mut self, expr: &UnaryExpression);
-    fn visit_binary_expression(&mut self, expr: &BinaryExpression);
+    fn visit_float_expression(&mut self, expr: &FloatExpression) -> ExpressionVisitResult;
+    fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
+    fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
 }
 
 pub trait Expression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor);
+    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult;
 }
 
 pub struct FloatExpression {
@@ -23,8 +24,8 @@ impl FloatExpression {
     }
 }
 impl Expression for FloatExpression {
-    fn accept(&self, expr : & mut dyn ExpressionVisitor) {
-        expr.visit_float_expression(self);
+    fn accept(&self, expr : & mut dyn ExpressionVisitor) -> ExpressionVisitResult {
+        expr.visit_float_expression(self)
     }
 }
 
@@ -41,8 +42,8 @@ impl UnaryExpression {
     }
 }
 impl Expression for UnaryExpression {
-    fn accept(&self, expr : & mut  dyn ExpressionVisitor) {
-        expr.visit_unary_expression(self);
+    fn accept(&self, expr : & mut  dyn ExpressionVisitor) -> ExpressionVisitResult {
+        expr.visit_unary_expression(self)
     }
 }
 
@@ -58,8 +59,8 @@ impl BinaryExpression {
     }
 }
 impl Expression for BinaryExpression {
-    fn accept(&self,expr : & mut dyn ExpressionVisitor) {
-        expr.visit_binary_expression(self);
+    fn accept(&self,expr : & mut dyn ExpressionVisitor) -> ExpressionVisitResult {
+        expr.visit_binary_expression(self)
     }
 }
 
