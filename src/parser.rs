@@ -7,6 +7,8 @@ pub trait ExpressionVisitor {
     fn visit_float_expression(&mut self, expr: &FloatExpression) -> ExpressionVisitResult;
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
+    fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
+    fn visit_statement_list_expression(&mut self, extr: &StatementListExpression) -> ExpressionVisitResult;
 }
 
 pub trait Expression {
@@ -64,6 +66,43 @@ impl Expression for BinaryExpression {
     }
 }
 
+pub struct AssignmentExpression {
+    pub name: String,
+    pub value: Box<dyn Expression>
+}
+impl AssignmentExpression {
+    pub fn new(name: String, value: Box<dyn Expression>) -> Self {
+        AssignmentExpression { name: name, value: value }
+    } 
+}
+impl Expression for AssignmentExpression {
+    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        expr.visit_assignment_expression(self)
+    }
+}
+
+pub struct StatementListExpression {
+    pub statement_list: Vec<Box<dyn Expression>>,
+}
+impl StatementListExpression {
+    pub fn new(statement_list: Vec<Box<dyn Expression>>) -> Self {
+        StatementListExpression {
+            statement_list : statement_list
+        }
+    }
+}
+impl Expression for StatementListExpression {
+    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        expr.visit_statement_list_expression(self)
+    }
+}
+
+// pub struct EmptyExpression;
+// impl EmptyExpression {
+//     pub fn 
+// }
+
+
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
 pub struct Parser {
@@ -80,8 +119,69 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> ParseResult {
-        self.expr()
+        self.program()
     } 
+
+
+    fn program(&mut self) -> ParseResult {
+        self.statement_list()
+    }
+
+    fn statement_list(&mut self) -> ParseResult {
+        let mut statements  = Vec::new();
+        loop {
+            if let Some(current_token) = self.peek_current_token() {
+                match current_token {
+                    Token::NewLine => {
+                        self.advance();
+                        continue;
+                    }
+                    _ => {
+                        let statement = self.statement()?;
+                        statements.push(statement);
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        Ok(Box::new(StatementListExpression::new(statements)))
+    }
+
+    fn statement(&mut self) -> ParseResult {
+        if let Some(token) = self.peek_current_token() {
+            match token {
+                Token::Name(_) => {
+                    return self.assignment_statement();
+                }
+                _ => {
+                    return Err(format!("unsupported statement token {}", token.to_string()));
+                }
+            }
+        } else {
+            return Err(String::from("no token for statement"));
+        }
+    }
+
+    fn assignment_statement(&mut self) -> ParseResult {
+        if let Some(name_token) = self.peek_current_token() {
+            match name_token {
+                Token::Name(name) => {
+                    let eat_result = self.eat(Token::Assignment);
+                    if let Ok(()) = eat_result {
+                        let value = self.expr()?;
+                        return Ok(Box::new(AssignmentExpression::new(name, value)));
+                    } else if let Err(error_message) = eat_result {
+                        return Err(error_message);                        
+                    }  
+                }
+                _ => {
+                    return Err(String::from("expected 'name' token in assignment statement"));
+                }
+            }
+        }
+        return Err(String::from("no token in assignment statement"));
+    }
     
     /// 'expr' function match next syntax pattern:
     /// term [[PLUS|MINUS] term]*
