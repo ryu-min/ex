@@ -97,12 +97,6 @@ impl Expression for StatementListExpression {
     }
 }
 
-// pub struct EmptyExpression;
-// impl EmptyExpression {
-//     pub fn 
-// }
-
-
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
 pub struct Parser {
@@ -167,6 +161,7 @@ impl Parser {
         if let Some(name_token) = self.peek_current_token() {
             match name_token {
                 Token::Name(name) => {
+                    self.advance();
                     let eat_result = self.eat(Token::Assignment);
                     if let Ok(()) = eat_result {
                         let value = self.expr()?;
