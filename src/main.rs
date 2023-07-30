@@ -18,7 +18,7 @@ fn main() -> io::Result<()>{
     
     for (prog, _) in test_map.iter() {
         let prog = prog.to_string();
-        let expr = Parser::new(&tokenize(&prog)).parse();
+        let expr = Parser::new(&tokenize(&prog)).parse().unwrap();
         let res = Interpreter::new().eval(expr);
         println!("program {} result is {}", prog, res);
     }

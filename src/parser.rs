@@ -64,6 +64,8 @@ impl Expression for BinaryExpression {
     }
 }
 
+pub type ParseResult = Result<Box<dyn Expression>, String>;
+
 pub struct Parser {
     tokens: Vec<Token>,
     pos: usize
@@ -77,18 +79,19 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Box<dyn Expression> {
+    pub fn parse(&mut self) -> ParseResult {
         self.expr()
     } 
 
-    fn expr(&mut self) -> Box<dyn Expression> {
-        let mut result = self.temr();
+    fn expr(&mut self) -> ParseResult {
+        let mut result = self.temr()?;
         loop {
             if let Some(token) = self.peek_current_token() {
                 match token {
                     Token::Plus | Token::Minus => {
                         self.advance();
-                        result =  Box::new(BinaryExpression::new(token, result, self.temr()));
+                        let expr = self.temr()?;
+                        result =  Box::new(BinaryExpression::new(token, result, expr));
                     }
                     _ => {
                         break;
@@ -98,17 +101,18 @@ impl Parser {
                 break;
             }
         }
-        return result;
+        return Ok(result);
     }
 
-    fn temr(&mut self) -> Box<dyn Expression> {
-        let mut result = self.factor();
+    fn temr(&mut self) -> ParseResult {
+        let mut result = self.factor()?;
         loop {
             if let Some(token) = self.peek_current_token() {
                 match token {
                     Token::Multi | Token::Devide => {
                         self.advance();
-                        result =  Box::new(BinaryExpression::new(token, result, self.factor()));
+                        let expr = self.factor()?;
+                        result =  Box::new(BinaryExpression::new(token, result, expr));
                     }
                     _ => {
                         break;
@@ -118,28 +122,29 @@ impl Parser {
                 break;
             }
         }
-        return result;
+        return Ok(result);
     }
 
-    fn factor(&mut self) -> Box<dyn Expression> {
+    fn factor(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
             Token::FloatLiteral(f) => {
                 self.advance();
-                return Box::new(FloatExpression::new(f));
+                return Ok(Box::new(FloatExpression::new(f)));
             }
             Token::OpenBrace => {
                 self.advance();
-                let result = self.expr();
-                self.eat(Token::CloseBrace);
-                return result; 
+                let result = self.expr()?;
+                self.eat(Token::CloseBrace)?;
+                return Ok(result); 
             }
             Token::Plus|Token::Minus => {
                 self.advance();
-                return Box::new(UnaryExpression::new(current_token, self.factor()));
+                let expr = self.factor()?;
+                return Ok(Box::new(UnaryExpression::new(current_token, expr)));
             }
             _ => {
-                panic!("unreachable");
+                return Err("unreachable".to_string());
             }
         }
     }
@@ -163,15 +168,16 @@ impl Parser {
         self.pos += 1;
     }
 
-    fn eat(&mut self, token: Token) {
+    fn eat(&mut self, token: Token) -> Result<(), String> {
         if let Some(current) = self.peek_current_token() {
             if  mem::discriminant(&current) == mem::discriminant(&token) {
                 self.advance();
+                Ok(())
             } else {
-                panic!("exprected token {}, find token {}", token.to_string(), current.to_string() );
+                return Err(format!("exprected token {}, find token {}", token.to_string(), current.to_string()));
             }
         } else {
-            panic!("exptect token {}, found no token", token.to_string());
+            return Err(format!("exptect token {}, found no token", token.to_string()));
         }
     }    
 }

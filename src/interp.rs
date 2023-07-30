@@ -114,7 +114,7 @@ mod tests {
         test_map.insert("10 / 5 + -3", -1.);
         for (prog, exp_res) in test_map.iter() {
             let prog = prog.to_string();
-            let expr = Parser::new(&tokenize(&prog)).parse();
+            let expr = Parser::new(&tokenize(&prog)).parse().unwrap();
             let res = Interpreter::new().eval(expr);
             assert_eq!(res, *exp_res);
         }
