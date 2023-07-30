@@ -138,6 +138,8 @@ impl Parser {
         self.statement_list()
     }
 
+    /// 'statement_list' function match next syntax pattern:
+    /// {statement}*
     fn statement_list(&mut self) -> ParseResult {
         let mut statements  = Vec::new();
         loop {
@@ -159,6 +161,8 @@ impl Parser {
         Ok(Box::new(StatementListExpression::new(statements)))
     }
 
+    /// 'statement' function match next syntax pattern:
+    /// {assignment_statement}
     fn statement(&mut self) -> ParseResult {
         if let Some(token) = self.peek_current_token() {
             match token {
@@ -174,6 +178,8 @@ impl Parser {
         }
     }
 
+    /// 'assignment_statement' function match next syntax pattern:
+    /// let NAME = {expr}
     fn assignment_statement(&mut self) -> ParseResult {
         self.eat(Token::Var)?;
         if let Some(name_token) = self.peek_current_token() {
@@ -197,7 +203,7 @@ impl Parser {
     }
     
     /// 'expr' function match next syntax pattern:
-    /// term [[PLUS|MINUS] term]*
+    /// {term} [[PLUS|MINUS] {term}]*
     fn expr(&mut self) -> ParseResult {
         let mut result = self.temr()?;
         loop {
@@ -220,7 +226,7 @@ impl Parser {
     }
 
     /// 'term' function match next syntax pattern:
-    /// factor [[MUL|DIV] factor]*
+    /// {factor} [[MUL|DIV] {factor}]*
     fn temr(&mut self) -> ParseResult {
         let mut result = self.factor()?;
         loop {
@@ -243,7 +249,7 @@ impl Parser {
     }
     
     /// 'factor' function match next syntax pattern:
-    /// FLOAT | ( expr )
+    /// FLOAT | NAME | {expr}
     fn factor(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
