@@ -8,7 +8,8 @@ pub trait ExpressionVisitor {
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
-    fn visit_statement_list_expression(&mut self, extr: &StatementListExpression) -> ExpressionVisitResult;
+    fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
+    fn visit_name_expression(&mut self, expr: &NameExpression) -> ExpressionVisitResult;
 }
 
 pub trait Expression {
@@ -97,6 +98,22 @@ impl Expression for StatementListExpression {
     }
 }
 
+pub struct NameExpression {
+    pub name : String,
+}
+impl NameExpression {
+    pub fn new(name: String) -> Self {
+        NameExpression { name: name }
+    }
+}
+impl Expression for NameExpression {
+    fn accept(&self, expr : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        expr.visit_name_expression(self)
+    }
+}
+
+
+
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
 pub struct Parser {
@@ -145,7 +162,7 @@ impl Parser {
     fn statement(&mut self) -> ParseResult {
         if let Some(token) = self.peek_current_token() {
             match token {
-                Token::Name(_) => {
+                Token::Var => {
                     return self.assignment_statement();
                 }
                 _ => {
@@ -158,6 +175,7 @@ impl Parser {
     }
 
     fn assignment_statement(&mut self) -> ParseResult {
+        self.eat(Token::Var)?;
         if let Some(name_token) = self.peek_current_token() {
             match name_token {
                 Token::Name(name) => {
@@ -243,6 +261,10 @@ impl Parser {
                 self.advance();
                 let expr = self.factor()?;
                 return Ok(Box::new(UnaryExpression::new(current_token, expr)));
+            }
+            Token::Name(n) => {
+                self.advance();
+                return Ok(Box::new(NameExpression::new(n)));
             }
             _ => {
                 println!("error in factor with token {}", current_token.to_string());

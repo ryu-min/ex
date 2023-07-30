@@ -17,7 +17,7 @@ pub fn tokenize(program: &String) -> Vec<Token> {
                 }
             }
         }
-        // result.push(Token::NewLine);
+        result.push(Token::NewLine);
     }
     return result;
 }
@@ -195,19 +195,19 @@ mod tests {
             Token::Name(String::from("x")),
             Token::Assignment,
             Token::FloatLiteral(10.),
-            // Token::NewLine,
+            Token::NewLine,
 
             Token::Var,
             Token::Name(String::from("y")),
             Token::Assignment,
             Token::FloatLiteral(20.5),
-            // Token::NewLine,
+            Token::NewLine,
 
             Token::Var,
             Token::Name(String::from("s")),
             Token::Assignment,
             Token::StringLiteral(String::from("str")),
-            // Token::NewLine,
+            Token::NewLine,
 
             Token::Name(String::from("x")),
             Token::Assignment,
@@ -218,7 +218,7 @@ mod tests {
             Token::Plus,
             Token::Name(String::from("y")),
             Token::CloseBrace,
-            // Token::NewLine
+            Token::NewLine
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);

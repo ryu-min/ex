@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use std::hash::Hash;
 
 use crate::parser::{Expression, ExpressionVisitor, ExpressionVisitResult};
 use crate::tokenizer::Token;
@@ -114,6 +112,15 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_name_expression(&mut self, expr: &crate::parser::NameExpression) -> ExpressionVisitResult {
+        if let Some(value) = self.var_maps.get(&expr.name) {
+            self.values_stack.push(value.clone());
+            return Ok(());
+        } else {
+            return Err(format!("unknown name '{}'", &expr.name));
+        }
+    }
+
 }
 
 
@@ -125,9 +132,11 @@ mod tests {
         let mut test_map = HashMap::new();
 
         
-        test_map.insert("a = 2 + 2", ValueVariant::Float(4.0));
-        test_map.insert(" a  =   (2 + 2) * 2", ValueVariant::Float(8.));
-        test_map.insert(" a  = 2 + 2 * 2 * 2", ValueVariant::Float((10.)));
+        test_map.insert("var a = 2 + 2", ValueVariant::Float(4.0));
+        test_map.insert("var a  =   (2 + 2) * 2", ValueVariant::Float(8.));
+        test_map.insert("var a  = 2 + 2 * 2 * 2", ValueVariant::Float((10.)));
+        test_map.insert("var b  = 0 - 3 \n\
+                           var a = b - 1", ValueVariant::Float((-4.)));
         // test_map.insert("-2 + 2", 0.);
         // test_map.insert("-(2 + 2 * 2)", -6.);
         // test_map.insert("10 / 5 + -3 ", -1.);
