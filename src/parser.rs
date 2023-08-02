@@ -10,6 +10,7 @@ pub trait ExpressionVisitor {
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
+    fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
 }
 
@@ -128,7 +129,20 @@ impl Expression for NameExpression {
     }
 }
 
-
+pub struct FunctionCallExpression {
+    pub name: String, 
+    pub args: Vec<Box<dyn Expression>> 
+}
+impl FunctionCallExpression {
+    pub fn new(name: String, args : Vec<Box<dyn Expression>> ) -> Self {
+        FunctionCallExpression { name: name, args: args }
+    }
+}
+impl Expression for FunctionCallExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_function_call_expression(self)
+    }
+}
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -178,12 +192,15 @@ impl Parser {
     }
 
     /// 'statement' function match next syntax pattern:
-    /// {assignment_statement}
+    /// {assignment_statement} | {function call}
     fn statement(&mut self) -> ParseResult {
         if let Some(token) = self.peek_current_token() {
             match token {
                 Token::Var => {
                     return self.assignment_statement();
+                }
+                Token::Name(_) => {
+                    return self.function_call_statement();
                 }
                 _ => {
                     return Err(format!("unsupported statement token {}", token.to_string()));
@@ -217,6 +234,43 @@ impl Parser {
         }
         return Err(String::from("no token in assignment statement"));
     }
+
+    fn function_call_statement(&mut self) -> ParseResult {
+        let mut f_name = String::new();
+        if let Some(name_token) = self.peek_current_token() {
+            match name_token {
+                Token::Name(n) => {
+                    f_name = n;
+                    self.advance();
+                } 
+                _ => {
+                    return Err(String::from("expected name token in function call"));
+                }       
+            }
+        } else {
+            return Err(String::from("expected function name"));
+        }
+        let mut f_args : Vec<Box<dyn Expression>> = Vec::new();
+        loop {
+            if let Some(current_token) = self.peek_current_token() {
+                match current_token {
+                    Token::NewLine => {
+                        break;
+                    }
+                    Token::Comma => {
+                        self.advance();
+                    }
+                    _ => {
+                        let arg_expression = self.expr()?;
+                        f_args.push(arg_expression);
+                    }
+                }
+            }
+        }
+        return Ok(Box::new(FunctionCallExpression::new(f_name, f_args)));
+    }
+
+
     
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*

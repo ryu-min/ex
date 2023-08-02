@@ -1,3 +1,4 @@
+use core::fmt;
 use std::collections::HashMap;
 
 use crate::parser::{Expression, ExpressionVisitor, ExpressionVisitResult};
@@ -8,6 +9,22 @@ pub enum ValueVariant {
     String(String),
     Integer(i64),
     Float(f64)
+}
+impl fmt::Display for ValueVariant {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ValueVariant::String(s) => {
+                write!(f, "{}", s)
+            }
+            ValueVariant::Integer(i) => {
+                write!(f, "{}", i)
+            
+            }
+            ValueVariant::Float(fl) => {
+                write!(f, "{}", fl)
+            }
+        }
+    }
 }
 
 pub struct Interpreter {
@@ -134,6 +151,29 @@ impl ExpressionVisitor for Interpreter {
             statement.accept(self)?;
         }
         Ok(())
+    }
+
+    fn visit_function_call_expression(&mut self, expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
+        if expr.name.eq("write") {
+            let arg_count = expr.args.len();
+            for arg_expr in expr.args.iter() {
+                arg_expr.accept(self)?;
+            }
+            let mut args : Vec<ValueVariant> = Vec::new();
+            for _ in 0..arg_count {
+                if let Some(value) = self.values_stack.pop() {
+                    args.insert(0, value);
+                } else {
+                    return Err(String::from("exptected value in stack"));
+                }
+            }
+            for arg in args.iter() {
+                println!("{}", arg.to_string());
+            }
+            Ok(())
+        } else {
+            return Err(String::from("for now only 'write' function supported"));
+        }
     }
 
 }

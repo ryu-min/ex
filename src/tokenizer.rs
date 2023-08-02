@@ -26,6 +26,7 @@ pub fn tokenize(program: &String) -> Vec<Token> {
 pub enum Token {
     Var,
     Dot,
+    Comma,
     Assignment,
     Plus,
     Minus,
@@ -48,6 +49,7 @@ pub enum Token {
         match self {
             Token::Var => write!(f, "VAR TOKEN"),
             Token::Dot => write!(f, "DOT TOKEN"),
+            Token::Comma => write!(f, "COMMA TOKEN"),
             Token::Assignment => write!(f, "ASSIGNMENT TOKEN"),
             Token::StringLiteral(s) => write!(f, "STRING LITERAL TOKEN WITH VALUE: {}", s),
             Token::IntLiteral(n) => write!(f, "INT LITERAL TOKEN WITH VALUE: {}", n),
