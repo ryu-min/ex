@@ -197,9 +197,8 @@ impl Parser {
         if let Some(token) = self.peek_current_token() {
             if self.current_token_is(Token::Var) {
                 return self.assignment_statement();
-            } else if self.current_token_is(Token::Name("".to_string())) //&& 
-                      // self.nth_token_is(1, Token::OpenBrace) {
-                    {
+            } else if self.current_token_is(Token::Name("".to_string())) && 
+                      self.nth_token_is(1, Token::OpenBrace) {
                     return self.function_call_statement();        
             } else {
                 return Err(format!("unsupported statement token {}", token.to_string()));
@@ -234,6 +233,7 @@ impl Parser {
     }
 
     fn function_call_statement(&mut self) -> ParseResult {
+
         let mut f_name = String::new();
         if let Some(name_token) = self.peek_current_token() {
             match name_token {
@@ -248,11 +248,12 @@ impl Parser {
         } else {
             return Err(String::from("expected function name"));
         }
+        self.eat(Token::OpenBrace)?;
         let mut f_args : Vec<Box<dyn Expression>> = Vec::new();
         loop {
             if let Some(current_token) = self.peek_current_token() {
                 match current_token {
-                    Token::NewLine => {
+                    Token::CloseBrace => {
                         break;
                     }
                     Token::Comma => {
@@ -265,6 +266,8 @@ impl Parser {
                 }
             }
         }
+        self.eat(Token::CloseBrace)?;
+        
         return Ok(Box::new(FunctionCallExpression::new(f_name, f_args)));
     }
 
@@ -365,7 +368,7 @@ impl Parser {
         if self.pos + n >= self.tokens.len() {
             return None;
         }
-        return Some(self.tokens[self.pos].clone());
+        return Some(self.tokens[self.pos + n].clone());
     }
 
     fn current_token_is(&self, exp_token: Token) -> bool {
@@ -374,6 +377,9 @@ impl Parser {
 
     fn nth_token_is(&self, n: usize, exp_token: Token) -> bool {
         if let Some(current_token) = self.peek_nth_token(n) {
+            println!("expected token is {}", exp_token.to_string());
+            println!("finded token is {}", current_token.to_string());
+            
             let exp_disc = mem::discriminant(&exp_token);
             return mem::discriminant(&current_token).eq( &exp_disc );
         } else {

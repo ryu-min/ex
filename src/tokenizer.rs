@@ -178,7 +178,7 @@ fn read_string_literal_token(source: &mut String) -> Option<Token> {
     }
     let end_literal = quote_indexes[1].0;
     let string_literal = source[1..end_literal].to_string();
-    source.replace_range(..end_literal, "");
+    source.replace_range(..end_literal + 1, "");
     return Some(Token::StringLiteral(string_literal));
 }
 
