@@ -195,17 +195,15 @@ impl Parser {
     /// {assignment_statement} | {function call}
     fn statement(&mut self) -> ParseResult {
         if let Some(token) = self.peek_current_token() {
-            match token {
-                Token::Var => {
-                    return self.assignment_statement();
-                }
-                Token::Name(_) => {
-                    return self.function_call_statement();
-                }
-                _ => {
-                    return Err(format!("unsupported statement token {}", token.to_string()));
-                }
-            }
+            if self.current_token_is(Token::Var) {
+                return self.assignment_statement();
+            } else if self.current_token_is(Token::Name("".to_string())) //&& 
+                      // self.nth_token_is(1, Token::OpenBrace) {
+                    {
+                    return self.function_call_statement();        
+            } else {
+                return Err(format!("unsupported statement token {}", token.to_string()));
+            } 
         } else {
             return Err(String::from("no token for statement"));
         }
@@ -353,24 +351,36 @@ impl Parser {
         }
     }
 
+    fn advance(&mut self) {
+        self.pos += 1;
+    }
     fn peek_current_token(&self) -> Option<Token> {
         if self.pos >= self.tokens.len() {
             return None
         }
         return Some(self.tokens[self.pos].clone());
-
     }
 
-    // fn peek_next_token(&mut self) -> Option<Token> {
-    //     if self.pos + 1 >= self.tokens.len() {
-    //         return None
-    //     }
-    //     return Some(self.tokens[self.pos + 1].clone());
-    // }
-
-    fn advance(&mut self) {
-        self.pos += 1;
+    fn peek_nth_token(&self, n: usize) -> Option<Token> {
+        if self.pos + n >= self.tokens.len() {
+            return None;
+        }
+        return Some(self.tokens[self.pos].clone());
     }
+
+    fn current_token_is(&self, exp_token: Token) -> bool {
+        return self.nth_token_is(0, exp_token);
+    }
+
+    fn nth_token_is(&self, n: usize, exp_token: Token) -> bool {
+        if let Some(current_token) = self.peek_nth_token(n) {
+            let exp_disc = mem::discriminant(&exp_token);
+            return mem::discriminant(&current_token).eq( &exp_disc );
+        } else {
+            return false;
+        }
+    }
+
 
     fn eat(&mut self, token: Token) -> Result<(), String> {
         if let Some(current) = self.peek_current_token() {
