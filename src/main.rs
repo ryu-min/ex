@@ -3,7 +3,9 @@ mod parser;
 mod interp;
 use crate::tokenizer::tokenize;
 use std::collections::{HashMap, HashSet};
+use std::env;
 use std::io::{self, Write};
+use std::fs;
 use crate::parser::Parser;
 use crate::interp::Interpreter;
 
@@ -29,20 +31,44 @@ fn run_cl_interp() {
     }
 }
 
+fn interp_file(path: &String) -> io::Result<()> {
+    let file_content = fs::read_to_string(path)?;
+    let tokens = tokenize(&file_content);
+    let mut parser = Parser::new(&tokens);
+    let parse_res = parser.parse();
+    if let Ok(expr) = parse_res {
+        let mut interp = Interpreter::new();
+        let interp_res = interp.parse(expr);
+        if let Err(err_msg) = interp_res {
+            println!("Interpreter error: {}", err_msg);
+        }
+    } else if let Err(err_msg) = parse_res {
+        println!("Parsing error: {}", err_msg);
+    }
+    Ok(())
+}
+
+fn print_usage() {
+    println!("USAGE: ");
+    println!("To run the command line interpreter: ");
+    println!("    ex.exe");
+    println!("To interpret a file: ");
+    println!("    ex.exe <path_to_file>");
+    println!("To show this message: ");
+    println!("    ex.exe --help or ex.exe -h");
+}
+
 fn main() -> io::Result<()>{
-    run_cl_interp();
-    // let mut test_map = HashSet::new();
-    //  test_map.insert("var b  = \"aa\" + \"bb\" \n\
-    //                  write (b ) \n \
-    //                  write (b + b)\n \
-    //                  write (b + b + \"cc\") \n \
-    //                  write (b, \"cc\")");         
-    // for prog in test_map.iter() {
-    //     let prog = prog.to_string();
-    //     let expr = Parser::new(&tokenize(&prog)).parse().unwrap();
-        
-    //     let mut interp = Interpreter::new(); 
-    //     interp.parse(expr);
-    // }
+    let args: Vec<String> = env::args().collect();
+    if args.contains(&String::from("--help")) || args.contains(&String::from("-h")) {
+        print_usage();
+    } else if args.len() == 1 {
+        run_cl_interp();
+    } else if args.len() == 2 {
+        interp_file(&args[1])?;
+    } else {
+        println!("Error: not valid count of args");
+        print_usage();
+    }
     Ok(())    
 }
