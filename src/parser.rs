@@ -348,7 +348,6 @@ impl Parser {
                 return Ok(Box::new(NameExpression::new(n)));
             }
             _ => {
-                println!("error in factor with token {}", current_token.to_string());
                 return Err("unreachable".to_string());
             }
         }
@@ -377,9 +376,6 @@ impl Parser {
 
     fn nth_token_is(&self, n: usize, exp_token: Token) -> bool {
         if let Some(current_token) = self.peek_nth_token(n) {
-            println!("expected token is {}", exp_token.to_string());
-            println!("finded token is {}", current_token.to_string());
-            
             let exp_disc = mem::discriminant(&exp_token);
             return mem::discriminant(&current_token).eq( &exp_disc );
         } else {

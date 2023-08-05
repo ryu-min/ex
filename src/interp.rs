@@ -31,7 +31,7 @@ pub struct Interpreter {
     values_stack: Vec<ValueVariant>,
     var_maps: HashMap<String, ValueVariant>
 }
-
+type InterpResult = Result<(), String>;
 impl Interpreter {
     pub fn new() -> Interpreter {
         Interpreter {
@@ -39,8 +39,12 @@ impl Interpreter {
             var_maps: HashMap::new()
         }
     } 
-    pub fn parse(&mut self, expr : Box<dyn Expression>) {
-        expr.accept(self).unwrap();
+    pub fn parse(&mut self, expr : Box<dyn Expression>) -> InterpResult {
+        if let Err(err_msg) = expr.accept(self) {
+            Err(err_msg)
+        } else {
+            Ok(())
+        }
     }
 
     pub fn get_var_value(&mut self, name: String) -> Option<ValueVariant> {
