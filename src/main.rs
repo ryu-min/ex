@@ -7,7 +7,7 @@ use std::env;
 use std::io::{self, Write};
 use std::fs;
 use crate::parser::Parser;
-use crate::interp::Interpreter;
+use crate::interp::{Interpreter, ValueVariant};
 
 fn run_cl_interp() {
     println!("Run commnand line Ex interpreter");
@@ -58,17 +58,35 @@ fn print_usage() {
     println!("    ex.exe --help or ex.exe -h");
 }
 
+fn first_function(args: Vec<ValueVariant>) -> Result<Option<ValueVariant>, String> {
+    Err(String::from("test error 2"))
+}
+
+fn second_function(args: Vec<ValueVariant>) -> Result<Option<ValueVariant>, String> {
+    Err(String::from("test error 2"))
+}
+type StdFunc = fn(Vec<ValueVariant>) -> Result<Option<ValueVariant>, String>;
 fn main() -> io::Result<()>{
-    let args: Vec<String> = env::args().collect();
-    if args.contains(&String::from("--help")) || args.contains(&String::from("-h")) {
-        print_usage();
-    } else if args.len() == 1 {
-        run_cl_interp();
-    } else if args.len() == 2 {
-        interp_file(&args[1])?;
-    } else {
-        println!("Error: not valid count of args");
-        print_usage();
+    let mut functions: HashMap<String, StdFunc> = HashMap::new();
+
+    functions.insert(String::from("first_function"), first_function);
+    functions.insert(String::from("second_function"), second_function);
+    for (fname, func) in functions.iter() {
+        if let Err(err_msg) = func(vec!()) {
+            println!("function {} err message: {}", fname, err_msg);
+        }
     }
-    Ok(())    
+    Ok(()) 
+    // let args: Vec<String> = env::args().collect();
+    // if args.contains(&String::from("--help")) || args.contains(&String::from("-h")) {
+    //     print_usage();
+    // } else if args.len() == 1 {
+    //     run_cl_interp();
+    // } else if args.len() == 2 {
+    //     interp_file(&args[1])?;
+    // } else {
+    //     println!("Error: not valid count of args");
+    //     print_usage();
+    // }
+    // Ok(())    
 }
