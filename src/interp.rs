@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::parser::{Expression, ExpressionVisitor, ExpressionVisitResult};
 use crate::tokenizer::Token;
-
+use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap};
 #[derive(Clone, PartialEq, Debug)]
 pub enum ValueVariant {
     String(String),
@@ -28,15 +28,25 @@ impl fmt::Display for ValueVariant {
 
 pub struct Interpreter {
     values_stack: Vec<ValueVariant>,
-    var_maps: HashMap<String, ValueVariant>
+    var_maps: HashMap<String, ValueVariant>,
+    std_funcs: StdFuncMap
 }
 type InterpResult = Result<(), String>;
 impl Interpreter {
     pub fn new() -> Interpreter {
-        Interpreter {
-            values_stack : vec![], 
-            var_maps: HashMap::new()
+        let mut std_func_repos = Vec::new();
+        std_func_repos.push(Box::new(IOFunctionRepo::new()));
+        let mut std_fucs : StdFuncMap = StdFuncMap::new(); 
+        for repo in std_func_repos.iter() {
+            for (fname, f) in repo.get_functions() {
+                std_fucs.insert(fname, f);
+            }
         }
+        return Interpreter {
+            values_stack : vec![], 
+            var_maps: HashMap::new(),
+            std_funcs : std_fucs
+        };
     } 
     pub fn parse(&mut self, expr : Box<dyn Expression>) -> InterpResult {
         if let Err(err_msg) = expr.accept(self) {
@@ -156,25 +166,24 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_function_call_expression(&mut self, expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
-        if expr.name.eq("write") {
-            let arg_count = expr.args.len();
-            for arg_expr in expr.args.iter() {
-                arg_expr.accept(self)?;
-            }
-            let mut args : Vec<ValueVariant> = Vec::new();
-            for _ in 0..arg_count {
-                if let Some(value) = self.values_stack.pop() {
-                    args.insert(0, value);
-                } else {
-                    return Err(String::from("exptected value in stack"));
+        match self.std_funcs.get(&expr.name).cloned() {
+            Some(f) => {
+                let arg_count = expr.args.len();
+                for arg_expr in expr.args.iter() {
+                    arg_expr.accept(self)?;
                 }
+                let mut args : Vec<ValueVariant> = Vec::new();
+                for _ in 0..arg_count {
+                    if let Some(value) = self.values_stack.pop() {
+                        args.insert(0, value);
+                    } else {
+                        return Err(String::from("exptected value in stack"));
+                    }
+                }
+                f(&args)?;
+                Ok(())
             }
-            for arg in args.iter() {
-                println!("{}", arg.to_string());
-            }
-            Ok(())
-        } else {
-            return Err(String::from("for now only 'write' function supported"));
+            None => return Err(format!("Function {} not defined", &expr.name)),
         }
     }
 

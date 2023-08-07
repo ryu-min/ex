@@ -29,6 +29,8 @@ fn run_cl_interp() {
                 if let Err(err_msg) = interp.parse(expr) {
                     println!("Interpreter error: {}", err_msg);
                 }
+            } else if let Err(err_msg) = parse_result {
+                println!("Parse error: {}", err_msg);
             }
         } else {
             println!("can't parse input");
@@ -64,30 +66,16 @@ fn print_usage() {
 }
 
 fn main() -> io::Result<()>{
-    let repo = IOFunctionRepo::new();
-    let mut  args : Vec<ValueVariant> = Vec::new();
-    args.push(ValueVariant::String("str1".to_string()));
-    args.push(ValueVariant::String("str2".to_string()));
-    args.push(ValueVariant::String("str3".to_string()));
-    for (name, f) in repo.get_functions().iter() {
-        println!("calll function {}", name);
-        f(&args).unwrap();
+    let args: Vec<String> = env::args().collect();
+    if args.contains(&String::from("--help")) || args.contains(&String::from("-h")) {
+        print_usage();
+    } else if args.len() == 1 {
+        run_cl_interp();
+    } else if args.len() == 2 {
+        interp_file(&args[1])?;
+    } else {
+        println!("Error: not valid count of args");
+        print_usage();
     }
-    // repo.get_functions().into_iter().for_each(|(k, v)| {
-
-    // });
-
-    Ok(()) 
-    // let args: Vec<String> = env::args().collect();
-    // if args.contains(&String::from("--help")) || args.contains(&String::from("-h")) {
-    //     print_usage();
-    // } else if args.len() == 1 {
-    //     run_cl_interp();
-    // } else if args.len() == 2 {
-    //     interp_file(&args[1])?;
-    // } else {
-    //     println!("Error: not valid count of args");
-    //     print_usage();
-    // }
-    // Ok(())    
+    Ok(())    
 }
