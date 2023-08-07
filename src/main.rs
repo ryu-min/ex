@@ -1,6 +1,8 @@
 mod tokenizer;
 mod parser;
 mod interp;
+use ex_std::FunctionRepository;
+
 use crate::tokenizer::tokenize;
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -8,6 +10,9 @@ use std::io::{self, Write};
 use std::fs;
 use crate::parser::Parser;
 use crate::interp::{Interpreter, ValueVariant};
+use crate::ex_std::IOFunctionRepo;
+
+mod ex_std;
 
 fn run_cl_interp() {
     println!("Run commnand line Ex interpreter");
@@ -58,24 +63,20 @@ fn print_usage() {
     println!("    ex.exe --help or ex.exe -h");
 }
 
-fn first_function(args: Vec<ValueVariant>) -> Result<Option<ValueVariant>, String> {
-    Err(String::from("test error 2"))
-}
-
-fn second_function(args: Vec<ValueVariant>) -> Result<Option<ValueVariant>, String> {
-    Err(String::from("test error 2"))
-}
-type StdFunc = fn(Vec<ValueVariant>) -> Result<Option<ValueVariant>, String>;
 fn main() -> io::Result<()>{
-    let mut functions: HashMap<String, StdFunc> = HashMap::new();
-
-    functions.insert(String::from("first_function"), first_function);
-    functions.insert(String::from("second_function"), second_function);
-    for (fname, func) in functions.iter() {
-        if let Err(err_msg) = func(vec!()) {
-            println!("function {} err message: {}", fname, err_msg);
-        }
+    let repo = IOFunctionRepo::new();
+    let mut  args : Vec<ValueVariant> = Vec::new();
+    args.push(ValueVariant::String("str1".to_string()));
+    args.push(ValueVariant::String("str2".to_string()));
+    args.push(ValueVariant::String("str3".to_string()));
+    for (name, f) in repo.get_functions().iter() {
+        println!("calll function {}", name);
+        f(&args).unwrap();
     }
+    // repo.get_functions().into_iter().for_each(|(k, v)| {
+
+    // });
+
     Ok(()) 
     // let args: Vec<String> = env::args().collect();
     // if args.contains(&String::from("--help")) || args.contains(&String::from("-h")) {

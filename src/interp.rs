@@ -18,7 +18,6 @@ impl fmt::Display for ValueVariant {
             }
             ValueVariant::Integer(i) => {
                 write!(f, "{}", i)
-            
             }
             ValueVariant::Float(fl) => {
                 write!(f, "{}", fl)
@@ -100,7 +99,6 @@ impl ExpressionVisitor for Interpreter {
         Ok(())          
 
     }
-
     fn visit_binary_expression(&mut self, expr: &crate::parser::BinaryExpression) -> ExpressionVisitResult {
         expr.left.accept(self)?;
         expr.right.accept(self)?;
