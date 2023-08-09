@@ -180,7 +180,17 @@ impl ExpressionVisitor for Interpreter {
                         return Err(String::from("exptected value in stack"));
                     }
                 }
-                f(&args)?;
+                let f_result = f(&args);
+                match f_result {
+                    Ok(f_return_value) => {
+                        if let Some(val) = f_return_value {
+                            self.values_stack.push(val);
+                        }
+                    }
+                    Err(err_msg) => {
+                        return Err(format!("Error with function {} : {}", &expr.name, err_msg));                
+                    }
+                }
                 Ok(())
             }
             None => return Err(format!("Function {} not defined", &expr.name)),

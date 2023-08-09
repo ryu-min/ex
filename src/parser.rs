@@ -218,7 +218,7 @@ impl Parser {
                     self.advance();
                     let eat_result = self.eat(Token::Assignment);
                     if let Ok(()) = eat_result {
-                        let value = self.expr()?;
+                        let value = self.statement()?;
                         return Ok(Box::new(AssignmentExpression::new(name, value)));
                     } else if let Err(error_message) = eat_result {
                         return Err(error_message);                        
