@@ -1,2 +1,2 @@
 var a = read()
-write("input", a)
+write("input:", a)
