@@ -1,2 +1,4 @@
 var a = read()
-write("input:", a)
+write("input is: ", a)
+var b = "   multi line test    "
+writeln(b, b, b)

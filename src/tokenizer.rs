@@ -4,19 +4,23 @@ use std::fmt;
 pub fn tokenize(program: &String) -> Vec<Token> {
     let mut result : Vec<Token> = Vec::new();
     for line in program.lines().clone() {
-        let splited_word = line.split(" ");
-        for word in splited_word { 
-            let mut word_string = word.to_string();
+        // let splited_word = line.split(" ");
+        // for word in splited_word { 
+            let mut word_string = line.to_string();
             while !word_string.is_empty() {
                 if let Some(token) = read_token_from_char(&mut word_string) {
                     result.push(token)
                 } else if let Some(token) = read_token_from_string(&mut word_string) {
                     result.push(token)    
                 } else {
-                    break;
+                    if word_string.chars().next().unwrap() == ' ' {
+                        word_string.remove(0);
+                    } else {
+                        break;
+                    }
                 }
             }
-        }
+        //}
         result.push(Token::NewLine);
     }
     return result;
@@ -81,6 +85,7 @@ fn char_to_token(ch : char) -> Option<Token> {
         '-' =>      Some(Token::Minus),
         '/' =>      Some(Token::Devide),
         '*' =>      Some(Token::Multi),
+        ',' =>      Some(Token::Comma),
         _ =>        None
     }
 }
@@ -101,9 +106,9 @@ fn read_token_from_string(source: &mut String) -> Option<Token> {
     }
     if let Some(token) = read_number_token(source) {
         return Some(token)
-    } else if let Some(token) = read_reserved_token(source) {
-        return Some(token);
     } else if let Some(token) = read_string_literal_token(source) {
+        return Some(token);
+    } else if let Some(token) = read_reserved_token(source) {
         return Some(token);
     } 
     else if let Some(token) = read_name_token(source) {
@@ -142,15 +147,17 @@ fn read_number_token(source: &mut String) -> Option<Token> {
 
 
 fn read_reserved_token(source: &mut String) -> Option<Token> { 
-    if source == "exec" {
-        source.clear();
-        return Some(Token::Exec);
-    } else if source == "var" {
-        source.clear();
+    if source == "var" || source.starts_with("var ")  {
+        for _ in 0..3 {
+            source.remove(0);
+        }
         return Some(Token::Var);
     } 
     None
 }
+
+
+
 
 fn read_name_token(source: &mut String) -> Option<Token> {
     let mut result = String::new();
@@ -185,6 +192,19 @@ fn read_string_literal_token(source: &mut String) -> Option<Token> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+
+    #[test]
+    fn bug_test() {
+
+        let program = "write(\"input: \", a)".to_string();
+        let tokens = tokenize(&program);
+        for token in tokens.iter() {
+            println!("token is {}", token);
+        }
+        assert!(true);
+    }
+
     #[test]
     fn tokenizer_test() {
         
