@@ -26,7 +26,7 @@ fn run_cl_interp() {
             let mut parser = Parser::new(&tokens);
             let parse_result = parser.parse();
             if let Ok(expr) = parse_result {
-                if let Err(err_msg) = interp.parse(expr) {
+                if let Err(err_msg) = interp.interp_expr(expr) {
                     println!("Interpreter error: {}", err_msg);
                 }
             } else if let Err(err_msg) = parse_result {
@@ -45,7 +45,7 @@ fn interp_file(path: &String) -> io::Result<()> {
     let parse_res = parser.parse();
     if let Ok(expr) = parse_res {
         let mut interp = Interpreter::new();
-        let interp_res = interp.parse(expr);
+        let interp_res = interp.interp_expr(expr);
         if let Err(err_msg) = interp_res {
             println!("Interpreter error: {}", err_msg);
         }

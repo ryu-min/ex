@@ -48,7 +48,7 @@ impl Interpreter {
             std_funcs : std_fucs
         };
     } 
-    pub fn parse(&mut self, expr : Box<dyn Expression>) -> InterpResult {
+    pub fn interp_expr(&mut self, expr : Box<dyn Expression>) -> InterpResult {
         if let Err(err_msg) = expr.accept(self) {
             Err(err_msg)
         } else {
@@ -218,7 +218,7 @@ mod tests {
             let prog = prog.to_string();
             let expr = Parser::new(&tokenize(&prog)).parse().unwrap();
             let mut interp = Interpreter::new(); 
-            interp.parse(expr);
+            interp.interp_expr(expr);
             assert_eq!(interp.get_var_value("a".to_string()).unwrap(), *exp_res);
         }
     }
