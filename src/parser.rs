@@ -233,6 +233,9 @@ impl Parser {
         return Err(String::from("no token in assignment statement"));
     }
 
+
+    /// 'function_call_statement' function match next syntax pattern:
+    /// f_name ([expt,]*)
     fn function_call_statement(&mut self) -> ParseResult {
 
         let mut f_name = String::new();
@@ -273,7 +276,6 @@ impl Parser {
     }
 
 
-    
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*
     fn expr(&mut self) -> ParseResult {
