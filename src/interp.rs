@@ -1,7 +1,7 @@
 use core::fmt;
 use std::collections::HashMap;
 
-use crate::parser::{Expression, ExpressionVisitor, ExpressionVisitResult};
+use crate::parser::{Expression, ExpressionVisitor, ExpressionVisitResult, FunctionDefExpression};
 use crate::tokenizer::Token;
 use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap};
 #[derive(Clone, PartialEq, Debug)]
@@ -26,7 +26,7 @@ impl fmt::Display for ValueVariant {
     }
 }
 
-type UserFuncMap = HashMap<String, Box<dyn Expression>>;
+type UserFuncMap = HashMap<String, FunctionDefExpression>;
 
 pub struct Interpreter {
     values_stack: Vec<ValueVariant>,
@@ -63,7 +63,51 @@ impl Interpreter {
     pub fn get_var_value(&mut self, name: String) -> Option<ValueVariant> {
         self.var_maps.get(&name).cloned()
     }
+
+    fn call_std_func(&mut self, expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
+            let f = self.std_funcs.get(&expr.name).unwrap().clone();
+            let arg_count = &expr.args.len();
+            for arg_expr in expr.args.iter() {
+                arg_expr.accept(self)?;
+            }
+            let mut args : Vec<ValueVariant> = Vec::new();
+            for _ in 0..*arg_count {
+                if let Some(value) = self.values_stack.pop() {
+                    args.insert(0, value);
+                } else {
+                    return Err(String::from("exptected value in stack"));
+                }
+            }
+            let f_result = f(&args);
+            match f_result {
+                Ok(f_return_value) => {
+                    if let Some(val) = f_return_value {
+                        self.values_stack.push(val);
+                    }
+                }
+                Err(err_msg) => {
+                    return Err(format!("Error with function {} : {}", &expr.name, err_msg));                
+                }
+            }
+            Ok(())
+        }
+        
+    fn call_user_func(&mut self, expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
+        let user_f = self.user_funcs.get(&expr.name).unwrap().clone();
+        for expr in user_f.body.iter() {
+            expr.accept(self)?;
+        }
+        //TODO
+        //1. visit all parameters
+        //2. match stack values to function args
+        //3. save to var_maps
+        //use
+
+        Ok(())
+    }
 }
+
+
 
 impl ExpressionVisitor for Interpreter {
     fn visit_float_literal_expression(&mut self, expr: &crate::parser::FloatLiteralExpression) -> ExpressionVisitResult {
@@ -163,42 +207,21 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_function_def_expression(&mut self, expr: &crate::parser::FunctionDefExpression) -> ExpressionVisitResult {
-        self.user_funcs.insert(expr.name.clone(), Box::new(expr.clone()));
+        self.user_funcs.insert(expr.name.clone(), expr.clone());
         return Ok(());
     }
 
-    fn visit_function_call_expression(&mut self, expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
-        match self.std_funcs.get(&expr.name).cloned() {
-            Some(f) => {
-                let arg_count = expr.args.len();
-                for arg_expr in expr.args.iter() {
-                    arg_expr.accept(self)?;
-                }
-                let mut args : Vec<ValueVariant> = Vec::new();
-                for _ in 0..arg_count {
-                    if let Some(value) = self.values_stack.pop() {
-                        args.insert(0, value);
-                    } else {
-                        return Err(String::from("exptected value in stack"));
-                    }
-                }
-                let f_result = f(&args);
-                match f_result {
-                    Ok(f_return_value) => {
-                        if let Some(val) = f_return_value {
-                            self.values_stack.push(val);
-                        }
-                    }
-                    Err(err_msg) => {
-                        return Err(format!("Error with function {} : {}", &expr.name, err_msg));                
-                    }
-                }
-                Ok(())
-            }
-            None => return Err(format!("Function {} not defined", &expr.name)),
+    fn visit_function_call_expression(&mut self,  expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
+        if self.std_funcs.contains_key(&expr.name) {
+            return self.call_std_func(expr);
+        } else if self.user_funcs.contains_key(&expr.name) {
+            return self.call_user_func(expr);
+        } else {
+            return Err(format!("function {} not defined", &expr.name));
         }
     }
 
+    
     fn visit_statement_list_expression(&mut self, expr: &crate::parser::StatementListExpression) -> ExpressionVisitResult {
         for statement in expr.statement_list.iter() {
             statement.accept(self)?;
@@ -206,6 +229,9 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_return_expression(&mut self, expr: &crate::parser::ReturnExpression) -> ExpressionVisitResult {
+        return expr.expr.accept(self);
+    }
 }
 
 
@@ -234,22 +260,12 @@ mod tests {
 
     #[test]
     fn function_call_test() {
-        // let prog : String = "fn test(a, b) { \n\
-        //                         write(a) \n\
-        //                         write(b) \n\
-        //                         }\n".to_string();
-
-        let prog : String = "fn test(a) { \n\
-                                write(a) \n\
-                                return a\n\
-                            }\n".to_string();
-    
-    
+        let prog : String = "fn test() { \n\
+                                writeln(\"call test\") \n\
+                                return \"afs\" \n\
+                            }\n\
+                            test()".to_string();    
         let tokens = tokenize(&prog);
-        for token in tokens.iter() {
-            println!("{}", token.to_string());
-        }
-
         let expr = Parser::new(&tokens).parse().unwrap();
 
         let mut interp = Interpreter::new(); 

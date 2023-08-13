@@ -14,6 +14,7 @@ pub trait ExpressionVisitor {
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
     fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
+    fn visit_return_expression(&mut self, expr: &ReturnExpression) -> ExpressionVisitResult;
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
 }
 
@@ -164,17 +165,14 @@ impl Expression for FunctionCallExpression {
 pub struct FunctionDefExpression {
     pub name: String,
     pub args: Vec<Box<dyn Expression>>,
-    pub body: Vec<Box<dyn Expression>>,
-    pub return_expr: Box<dyn Expression>
+    pub body: Vec<Box<dyn Expression>>
 }
 impl FunctionDefExpression {
-    pub fn new(name: String, args: Vec<Box<dyn Expression>>,
-         body: Vec<Box<dyn Expression>>, return_expr: Box<dyn Expression>) -> Self {
+    pub fn new(name: String, args: Vec<Box<dyn Expression>>, body: Vec<Box<dyn Expression>>) -> Self {
         FunctionDefExpression {
             name : name,
             args : args,
-            body : body,
-            return_expr : return_expr
+            body : body
         }
     }
 }
@@ -183,6 +181,22 @@ impl Expression for FunctionDefExpression {
         visitor.visit_function_def_expression(self)
     }
 }
+
+#[derive(Clone)]
+pub struct ReturnExpression {
+    pub expr: Box<dyn Expression>
+}
+impl ReturnExpression {
+    pub fn new(expr: Box<dyn Expression>) -> Self {
+        ReturnExpression { expr: expr }
+    }
+}
+impl Expression for ReturnExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_return_expression(self)
+    }
+}
+
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -245,6 +259,9 @@ impl Parser {
             } else if self.current_token_is(Token::NewLine) {
                 self.advance();
                 return self.statement();
+            } else if self.current_token_is(Token::Return) {
+                self.advance();
+                return self.expr();    
             } else {
                 return self.expr();
             }
@@ -293,18 +310,14 @@ impl Parser {
         let f_args = self.read_func_args()?;
         let mut f_body : Vec<Box<dyn Expression>> = Vec::new();
         self.eat(Token::OpenCurlyBrace)?;
-        while !self.current_token_is(Token::Return) {
-            if self.current_token_is(Token::NewLine) {
-                self.advance();
-                continue;
-            }
-            f_body.push(self.statement()?);   
+                    self.skip_new_lines();
+        while !self.current_token_is(Token::CloseCurlyBrace) {
+            f_body.push(self.statement()?); 
+            self.skip_new_lines();
         }
-        self.eat(Token::Return)?;
-        let ret_expr = self.expr()?;
         self.skip_new_lines();
         self.eat(Token::CloseCurlyBrace)?;
-        return Ok(Box::new(FunctionDefExpression::new(f_name, f_args, f_body, ret_expr)));
+        return Ok(Box::new(FunctionDefExpression::new(f_name, f_args, f_body)));
     }
 
 
@@ -383,7 +396,7 @@ impl Parser {
                 return Ok(Box::new(NameExpression::new(n)));
             }
             _ => {
-                return Err("unreachable".to_string());
+                return Err(format!("Not valid factor {}", current_token.to_string()));
             }
         }
     }

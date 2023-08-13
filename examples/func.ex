@@ -1,4 +1,6 @@
-fn test(a, b) {
-    write(a)
-    write(b)
+fn test() {
+    writeln("call test function YEE")
 }
+test()
+test()
+test()
