@@ -2,6 +2,7 @@ mod tokenizer;
 mod parser;
 mod interp;
 use ex_std::FunctionRepository;
+use parser::Expression;
 
 use crate::tokenizer::tokenize;
 use std::collections::{HashMap, HashSet};

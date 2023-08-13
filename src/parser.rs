@@ -1,5 +1,7 @@
 use crate::tokenizer::Token;
 use std::mem;
+use dyn_clone::DynClone;
+
 
 pub type ExpressionVisitResult = Result<(), String>;
 
@@ -15,10 +17,17 @@ pub trait ExpressionVisitor {
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
 }
 
-pub trait Expression {
+pub trait Expression : DynClone  {
     fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult;
 }
 
+impl Clone for Box<dyn Expression> {
+    fn clone(&self) -> Self {
+        dyn_clone::clone_box(&**self)
+    }
+}
+
+#[derive(Clone)]
 pub struct FloatLiteralExpression {
     pub f : f64
 } 
@@ -35,6 +44,7 @@ impl Expression for FloatLiteralExpression {
     }
 }
 
+#[derive(Clone)]
 pub struct StringLiteralExpression {
     pub s : String
 }
@@ -49,7 +59,7 @@ impl Expression for StringLiteralExpression {
     }
 }
 
-
+#[derive(Clone)]
 pub struct UnaryExpression {
     pub op: Token,
     pub expr : Box<dyn Expression>
@@ -68,7 +78,7 @@ impl Expression for UnaryExpression {
     }
 }
 
-
+#[derive(Clone)]
 pub struct BinaryExpression {
     pub op : Token, 
     pub left : Box<dyn Expression>,
@@ -85,6 +95,8 @@ impl Expression for BinaryExpression {
     }
 }
 
+
+#[derive(Clone)]
 pub struct AssignmentExpression {
     pub name: String,
     pub value: Box<dyn Expression>
@@ -100,6 +112,7 @@ impl Expression for AssignmentExpression {
     }
 }
 
+#[derive(Clone)]
 pub struct StatementListExpression {
     pub statement_list: Vec<Box<dyn Expression>>,
 }
@@ -116,6 +129,7 @@ impl Expression for StatementListExpression {
     }
 }
 
+#[derive(Clone)]
 pub struct NameExpression {
     pub name : String,
 }
@@ -130,6 +144,7 @@ impl Expression for NameExpression {
     }
 }
 
+#[derive(Clone)]
 pub struct FunctionCallExpression {
     pub name: String, 
     pub args: Vec<Box<dyn Expression>> 
@@ -145,6 +160,7 @@ impl Expression for FunctionCallExpression {
     }
 }
 
+#[derive(Clone)]
 pub struct FunctionDefExpression {
     pub name: String,
     pub args: Vec<Box<dyn Expression>>,
@@ -219,7 +235,6 @@ impl Parser {
     /// {assignment_statement} | {function call}
     fn statement(&mut self) -> ParseResult {
         if let Some(t) = self.peek_current_token() {
-            println!("current token in statement is {}", t.to_string());
             if self.current_token_is(Token::Var) {
                 return self.assignment_statement();
             } else if self.current_token_is(Token::Name("".to_string())) && 

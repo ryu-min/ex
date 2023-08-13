@@ -26,10 +26,13 @@ impl fmt::Display for ValueVariant {
     }
 }
 
+type UserFuncMap = HashMap<String, Box<dyn Expression>>;
+
 pub struct Interpreter {
     values_stack: Vec<ValueVariant>,
     var_maps: HashMap<String, ValueVariant>,
-    std_funcs: StdFuncMap
+    std_funcs: StdFuncMap,
+    user_funcs: UserFuncMap
 }
 type InterpResult = Result<(), String>;
 impl Interpreter {
@@ -45,7 +48,8 @@ impl Interpreter {
         return Interpreter {
             values_stack : vec![], 
             var_maps: HashMap::new(),
-            std_funcs : std_fucs
+            std_funcs : std_fucs,
+            user_funcs : HashMap::new()
         };
     } 
     pub fn interp_expr(&mut self, expr : Box<dyn Expression>) -> InterpResult {
@@ -158,11 +162,9 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_statement_list_expression(&mut self, expr: &crate::parser::StatementListExpression) -> ExpressionVisitResult {
-        for statement in expr.statement_list.iter() {
-            statement.accept(self)?;
-        }
-        Ok(())
+    fn visit_function_def_expression(&mut self, expr: &crate::parser::FunctionDefExpression) -> ExpressionVisitResult {
+        self.user_funcs.insert(expr.name.clone(), Box::new(expr.clone()));
+        return Ok(());
     }
 
     fn visit_function_call_expression(&mut self, expr: &crate::parser::FunctionCallExpression) -> ExpressionVisitResult {
@@ -197,9 +199,11 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_function_def_expression(&mut self, expr: &crate::parser::FunctionDefExpression) -> ExpressionVisitResult {
-        println!("Visit function def {}", expr.name);
-        return Ok(());
+    fn visit_statement_list_expression(&mut self, expr: &crate::parser::StatementListExpression) -> ExpressionVisitResult {
+        for statement in expr.statement_list.iter() {
+            statement.accept(self)?;
+        }
+        Ok(())
     }
 
 }
