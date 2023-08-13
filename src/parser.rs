@@ -10,6 +10,7 @@ pub trait ExpressionVisitor {
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
+    fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
 }
@@ -144,6 +145,29 @@ impl Expression for FunctionCallExpression {
     }
 }
 
+pub struct FunctionDefExpression {
+    pub name: String,
+    pub args: Vec<Box<dyn Expression>>,
+    pub body: Vec<Box<dyn Expression>>,
+    pub return_expr: Box<dyn Expression>
+}
+impl FunctionDefExpression {
+    pub fn new(name: String, args: Vec<Box<dyn Expression>>,
+         body: Vec<Box<dyn Expression>>, return_expr: Box<dyn Expression>) -> Self {
+        FunctionDefExpression {
+            name : name,
+            args : args,
+            body : body,
+            return_expr : return_expr
+        }
+    }
+}
+impl Expression for FunctionDefExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_function_def_expression(self)
+    }
+}
+
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
 pub struct Parser {
@@ -194,16 +218,21 @@ impl Parser {
     /// 'statement' function match next syntax pattern:
     /// {assignment_statement} | {function call}
     fn statement(&mut self) -> ParseResult {
-        if let Some(_) = self.peek_current_token() {
+        if let Some(t) = self.peek_current_token() {
+            println!("current token in statement is {}", t.to_string());
             if self.current_token_is(Token::Var) {
                 return self.assignment_statement();
             } else if self.current_token_is(Token::Name("".to_string())) && 
                       self.nth_token_is(1, Token::OpenBrace) {
                     return self.function_call_statement();        
+            } else if self.current_token_is(Token::Fn) {
+                return self.function_def_statement();
+            } else if self.current_token_is(Token::NewLine) {
+                self.advance();
+                return self.statement();
             } else {
                 return self.expr();
-                //return Err(format!("unsupported statement token {}", token.to_string()));
-            } 
+            }
         } else {
             return Err(String::from("no token for statement"));
         }
@@ -238,41 +267,29 @@ impl Parser {
     /// f_name ([expt,]*)
     fn function_call_statement(&mut self) -> ParseResult {
 
-        let mut f_name = String::new();
-        if let Some(name_token) = self.peek_current_token() {
-            match name_token {
-                Token::Name(n) => {
-                    f_name = n;
-                    self.advance();
-                } 
-                _ => {
-                    return Err(String::from("expected name token in function call"));
-                }       
-            }
-        } else {
-            return Err(String::from("expected function name"));
-        }
-        self.eat(Token::OpenBrace)?;
-        let mut f_args : Vec<Box<dyn Expression>> = Vec::new();
-        loop {
-            if let Some(current_token) = self.peek_current_token() {
-                match current_token {
-                    Token::CloseBrace => {
-                        break;
-                    }
-                    Token::Comma => {
-                        self.advance();
-                    }
-                    _ => {
-                        let arg_expression = self.expr()?;
-                        f_args.push(arg_expression);
-                    }
-                }
-            }
-        }
-        self.eat(Token::CloseBrace)?;
-        
+        let f_name = self.read_name()?;
+        let f_args = self.read_func_args()?;
         return Ok(Box::new(FunctionCallExpression::new(f_name, f_args)));
+    }
+
+    fn function_def_statement(&mut self) -> ParseResult {
+        self.eat(Token::Fn)?;
+        let f_name = self.read_name()?;
+        let f_args = self.read_func_args()?;
+        let mut f_body : Vec<Box<dyn Expression>> = Vec::new();
+        self.eat(Token::OpenCurlyBrace)?;
+        while !self.current_token_is(Token::Return) {
+            if self.current_token_is(Token::NewLine) {
+                self.advance();
+                continue;
+            }
+            f_body.push(self.statement()?);   
+        }
+        self.eat(Token::Return)?;
+        let ret_expr = self.expr()?;
+        self.skip_new_lines();
+        self.eat(Token::CloseCurlyBrace)?;
+        return Ok(Box::new(FunctionDefExpression::new(f_name, f_args, f_body, ret_expr)));
     }
 
 
@@ -386,7 +403,6 @@ impl Parser {
         }
     }
 
-
     fn eat(&mut self, token: Token) -> Result<(), String> {
         if let Some(current) = self.peek_current_token() {
             if  mem::discriminant(&current) == mem::discriminant(&token) {
@@ -398,5 +414,51 @@ impl Parser {
         } else {
             return Err(format!("exptect token {}, found no token", token.to_string()));
         }
-    }    
+    }
+
+    fn read_name(&mut self) -> Result<String, String> {
+        if let Some(name_token) = self.peek_current_token() {
+            match name_token {
+                Token::Name(n) => {
+                    self.advance();
+                    Ok(n)
+                } 
+                _ => {
+                    return Err(String::from("expected name token"));
+                }       
+            }
+        } else {
+            return Err(String::from("expected name token"));
+        }
+    }
+
+    fn read_func_args(&mut self ) -> Result<Vec<Box<dyn Expression>>, String> {
+        self.eat(Token::OpenBrace)?;
+        let mut f_args : Vec<Box<dyn Expression>> = Vec::new();
+        loop {
+            if let Some(current_token) = self.peek_current_token() {
+                match current_token {
+                    Token::CloseBrace => {
+                        break;
+                    }
+                    Token::Comma => {
+                        self.advance();
+                    }
+                    _ => {
+                        let arg_expression = self.expr()?;
+                        f_args.push(arg_expression);
+                    }
+                }
+            }
+        }
+        self.eat(Token::CloseBrace)?;
+        Ok(f_args)
+    }
+
+    fn skip_new_lines(&mut self) {
+        while self.current_token_is(Token::NewLine) {
+            self.advance();
+        }
+    }
+
 }

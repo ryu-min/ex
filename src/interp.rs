@@ -197,6 +197,11 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
+    fn visit_function_def_expression(&mut self, expr: &crate::parser::FunctionDefExpression) -> ExpressionVisitResult {
+        println!("Visit function def {}", expr.name);
+        return Ok(());
+    }
+
 }
 
 
@@ -218,9 +223,35 @@ mod tests {
             let prog = prog.to_string();
             let expr = Parser::new(&tokenize(&prog)).parse().unwrap();
             let mut interp = Interpreter::new(); 
-            interp.interp_expr(expr);
+            interp.interp_expr(expr).unwrap();
             assert_eq!(interp.get_var_value("a".to_string()).unwrap(), *exp_res);
         }
     }
+
+    #[test]
+    fn function_call_test() {
+        // let prog : String = "fn test(a, b) { \n\
+        //                         write(a) \n\
+        //                         write(b) \n\
+        //                         }\n".to_string();
+
+        let prog : String = "fn test(a) { \n\
+                                write(a) \n\
+                                return a\n\
+                            }\n".to_string();
+    
+    
+        let tokens = tokenize(&prog);
+        for token in tokens.iter() {
+            println!("{}", token.to_string());
+        }
+
+        let expr = Parser::new(&tokens).parse().unwrap();
+
+        let mut interp = Interpreter::new(); 
+        interp.interp_expr(expr).unwrap();
+        assert_eq!(true, true);
+    }
+    
     
 }

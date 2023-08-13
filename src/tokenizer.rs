@@ -45,6 +45,8 @@ pub enum Token {
     IntLiteral(i64),
     FloatLiteral(f64),
     Exec,
+    Fn,
+    Return,
     NewLine
  }
 
@@ -68,7 +70,9 @@ pub enum Token {
             Token::Multi => write!(f, "MULTI TOKEN"),
             Token::Devide => write!(f, "DEVIDE TOKEN"),
             Token::Name(s) => write!(f, "NAME TOKEN {s}"), 
-            Token::NewLine => write!(f, "NEW LINE TOKEN")
+            Token::NewLine => write!(f, "NEW LINE TOKEN"),
+            Token::Fn => write!(f, "FN TOKEN"),
+            Token::Return => write!(f, "RETURN TOKEN"),
         }
     }
 }
@@ -148,15 +152,17 @@ fn read_number_token(source: &mut String) -> Option<Token> {
 
 fn read_reserved_token(source: &mut String) -> Option<Token> { 
     if source == "var" || source.starts_with("var ")  {
-        for _ in 0..3 {
-            source.remove(0);
-        }
+        source.replace_range(..4, "");
         return Some(Token::Var);
-    } 
+    } else if source == "fn" || source.starts_with("fn ") {
+        source.replace_range(..3, "");
+        return Some(Token::Fn);
+     } else if source == "return" || source.starts_with("return ") {
+        source.replace_range(..7, "");
+        return Some(Token::Return);   
+    }
     None
 }
-
-
 
 
 fn read_name_token(source: &mut String) -> Option<Token> {
