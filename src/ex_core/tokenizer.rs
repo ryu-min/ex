@@ -141,8 +141,10 @@ fn read_number_token(source: &mut String) -> Option<Token> {
         return None
     }
     source.replace_range(0..result_string.len(), "");
-    if let Ok(f) = result_string.parse::<f64>() {
-        return Some(Token::FloatLiteral(f));
+    if result_string.contains('.') {
+        if let Ok(f) = result_string.parse::<f64>() {
+            return Some(Token::FloatLiteral(f));
+        } 
     } else if let Ok(i) = result_string.parse::<i64>() {
         return Some(Token::IntLiteral(i));
     }
@@ -211,9 +213,9 @@ mod tests {
         assert!(true);
     }
 
+
     #[test]
     fn tokenizer_test() {
-        
         let program: String = String::from("var x = 10 \n\
                                             var y = 20.5 \n\
                                             var s = \"str\" \\
@@ -222,7 +224,7 @@ mod tests {
             Token::Var,
             Token::Name(String::from("x")),
             Token::Assignment,
-            Token::FloatLiteral(10.),
+            Token::IntLiteral(10),
             Token::NewLine,
 
             Token::Var,
@@ -252,4 +254,22 @@ mod tests {
         assert_eq!(tokens, expected_tokens);
 
     }
+
+    #[test]
+    fn number_tests() {
+        let program: String = String::from("5 + 5.5 = 11 - 0.5");
+        let expected_tokens = vec![
+            Token::IntLiteral(5),
+            Token::Plus,
+            Token::FloatLiteral(5.5),
+            Token::Assignment,
+            Token::IntLiteral(11),
+            Token::Minus,
+            Token::FloatLiteral(0.5),
+            Token::NewLine
+        ];
+        let tokens = tokenize(&program);
+        assert_eq!(tokens, expected_tokens);
+    }
+
 }
