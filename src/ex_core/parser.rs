@@ -6,6 +6,7 @@ pub type ExpressionVisitResult = Result<(), String>;
 
 pub trait ExpressionVisitor {
     fn visit_float_literal_expression(&mut self, expr: &FloatLiteralExpression) -> ExpressionVisitResult;
+    fn visit_int_literal_expression(&mut self, expr: &IntLiteralExpression) -> ExpressionVisitResult;
     fn visit_string_literal_expression(&mut self, expr: &StringLiteralExpression) -> ExpressionVisitResult;
     fn visit_name_expression(&mut self, expr: &NameExpression) -> ExpressionVisitResult;
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
@@ -28,6 +29,20 @@ impl Clone for Box<dyn Expression> {
 }
 
 #[derive(Clone)]
+pub struct IntLiteralExpression {
+    pub i : i64
+}
+impl IntLiteralExpression {
+    pub fn new(i: i64) -> Self { Self { i : i} }
+}
+impl Expression for IntLiteralExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_int_literal_expression(self)
+    }
+}
+
+
+#[derive(Clone)]
 pub struct FloatLiteralExpression {
     pub f : f64
 } 
@@ -43,6 +58,8 @@ impl Expression for FloatLiteralExpression {
         visitor.visit_float_literal_expression(self)
     }
 }
+
+
 
 #[derive(Clone)]
 pub struct StringLiteralExpression {
@@ -371,6 +388,10 @@ impl Parser {
     fn factor(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
+            Token::IntLiteral(i) => {
+                self.advance();
+                return Ok(Box::new(IntLiteralExpression::new(i)));
+            }
             Token::FloatLiteral(f) => {
                 self.advance();
                 return Ok(Box::new(FloatLiteralExpression::new(f)));

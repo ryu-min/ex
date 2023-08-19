@@ -61,7 +61,7 @@ impl Interpreter {
         }
     }
 
-    pub fn get_var_value(&mut self, name: String) -> Option<ValueVariant> {
+    pub fn _get_var_value(&mut self, name: String) -> Option<ValueVariant> {
         self.var_maps.get(&name).cloned()
     }
 
@@ -111,6 +111,11 @@ impl Interpreter {
 
 
 impl ExpressionVisitor for Interpreter {
+    fn visit_int_literal_expression(&mut self, expr: &super::IntLiteralExpression) -> ExpressionVisitResult {
+        self.values_stack.push(ValueVariant::Integer(expr.i));
+        Ok(())
+    }
+
     fn visit_float_literal_expression(&mut self, expr: &crate::ex_core::parser::FloatLiteralExpression) -> ExpressionVisitResult {
         self.values_stack.push(ValueVariant::Float(expr.f));
         Ok(())
@@ -147,6 +152,19 @@ impl ExpressionVisitor for Interpreter {
                             return Err(format!("unsupported unary op {}", op.to_string()));
                         }
                     }
+                }
+                ValueVariant::Integer(i) => {
+                    match op {
+                        Token::Plus => {
+                            self.values_stack.push(ValueVariant::Integer(i));  
+                        } 
+                        Token::Minus => {
+                            self.values_stack.push(ValueVariant::Integer(-i));            
+                        }
+                        _ => {
+                            return Err(format!("unsupported unary op {}", op.to_string()));
+                        }
+                    }
                 },
                 _ => {
                     return Err("for now unary operation supported only with float types".to_string());    
@@ -177,6 +195,25 @@ impl ExpressionVisitor for Interpreter {
                     }
                     self.values_stack.push(ValueVariant::Float(res));
                 }
+                (ValueVariant::Integer(l_int), ValueVariant::Integer(r_int)) => {
+                    match op {
+                        Token::Plus => {
+                            self.values_stack.push(ValueVariant::Integer(l_int + r_int));
+                        }
+                        Token::Minus => {
+                            self.values_stack.push(ValueVariant::Integer(l_int - r_int));
+                        }
+                        Token::Multi => {
+                            self.values_stack.push(ValueVariant::Integer(l_int * r_int));
+                        }
+                        Token::Devide => {
+                            self.values_stack.push(ValueVariant::Float(l_int as f64 / r_int as f64));
+                        }
+                        _ => {
+                            return Err(format!("binary op {} not supported for float's", op.to_string()));
+                        }
+                    }
+                }
                 (ValueVariant::String(l_string), ValueVariant::String(r_string)) => {
                     match op {
                         Token::Plus => {
@@ -188,7 +225,7 @@ impl ExpressionVisitor for Interpreter {
                     }
                 }
                 _ => {
-                    return Err("for now binary operation supported only with float types".to_string());
+                    return Err("for now binary operation for this args".to_string());
                 }
             }
         } else {
@@ -233,6 +270,7 @@ impl ExpressionVisitor for Interpreter {
     fn visit_return_expression(&mut self, expr: &crate::ex_core::parser::ReturnExpression) -> ExpressionVisitResult {
         return expr.expr.accept(self);
     }
+
 }
 
 
@@ -241,11 +279,11 @@ mod tests {
     #[test]
     fn iterp_test() {
         let mut test_map: std::collections::HashMap<&str, _> = std::collections::HashMap::new();
-        test_map.insert("var a = 2 + 2", super::ValueVariant::Float(4.0));
-        test_map.insert("var a  =   (2 + 2) * 2", super::ValueVariant::Float(8.));
-        test_map.insert("var a  = 2 + 2 * 2 * 2", super::ValueVariant::Float(10.));
+        test_map.insert("var a = 2 + 2", super::ValueVariant::Integer(4));
+        test_map.insert("var a  =   (2 + 2) * 2", super::ValueVariant::Integer(8));
+        test_map.insert("var a  = 2 + 2 * 2 * 2", super::ValueVariant::Integer(10));
         test_map.insert("var b  = 0 - 3 \n\
-                           var a = b - 1", super::ValueVariant::Float(-4.));
+                           var a = b - 1", super::ValueVariant::Integer(-4));
         test_map.insert("var a  = \"aa\" + \"bb\"", super::ValueVariant::String(String::from("aabb")));
         test_map.insert("var b  = \"aa\" \n\
                            var a = b + \"bb\" ", super::ValueVariant::String(String::from("aabb")));
@@ -254,7 +292,7 @@ mod tests {
             let expr = crate::ex_core::parser::Parser::new(&crate::ex_core::tokenize(&prog)).parse().unwrap();
             let mut interp = crate::ex_core::interp::Interpreter::new(); 
             interp.interp_expr(expr).unwrap();
-            assert_eq!(interp.get_var_value("a".to_string()).unwrap(), *exp_res);
+            assert_eq!(interp._get_var_value("a".to_string()).unwrap(), *exp_res);
         }
     }
 
