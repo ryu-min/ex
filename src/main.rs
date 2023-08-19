@@ -1,19 +1,10 @@
-mod tokenizer;
-mod parser;
-mod interp;
-use ex_std::FunctionRepository;
-use parser::Expression;
-
-use crate::tokenizer::tokenize;
-use std::collections::{HashMap, HashSet};
 use std::env;
 use std::io::{self, Write};
 use std::fs;
-use crate::parser::Parser;
-use crate::interp::{Interpreter, ValueVariant};
-use crate::ex_std::IOFunctionRepo;
+use crate::ex_core::{tokenize, Interpreter, Parser};
 
 mod ex_std;
+mod ex_core;
 
 fn run_cl_interp() {
     println!("Run commnand line Ex interpreter");

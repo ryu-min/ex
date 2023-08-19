@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::interp::ValueVariant;
+use crate::ex_core::interp::ValueVariant;
 
 pub type StdFuncArgs = Vec<ValueVariant>;
 pub type StdFuncResult = Result<Option<ValueVariant>, String>;

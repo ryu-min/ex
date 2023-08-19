@@ -1,6 +1,8 @@
 use std::{collections::HashMap, io};
+use crate::ex_core::ValueVariant;
+
 use super::func_respository::{FunctionRepository, StdFuncResult, StdFuncArgs, StdFuncMap, StdFunc};
-use crate::interp::ValueVariant;
+//use crate::core::interp::ValueVariant;
 pub struct IOFunctionRepo {
     funcs : StdFuncMap,
 }

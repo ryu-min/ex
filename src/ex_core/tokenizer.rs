@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn tokenizer_test() {
         
-        let mut program = String::from("var x = 10 \n\
+        let program: String = String::from("var x = 10 \n\
                                             var y = 20.5 \n\
                                             var s = \"str\" \\
                                             x = x * ( x + y )");

@@ -1,7 +1,6 @@
-use crate::tokenizer::Token;
 use std::mem;
 use dyn_clone::DynClone;
-
+use super::tokenizer::Token;
 
 pub type ExpressionVisitResult = Result<(), String>;
 
@@ -248,7 +247,7 @@ impl Parser {
     /// 'statement' function match next syntax pattern:
     /// {assignment_statement} | {function call}
     fn statement(&mut self) -> ParseResult {
-        if let Some(t) = self.peek_current_token() {
+        if let Some(_) = self.peek_current_token() {
             if self.current_token_is(Token::Var) {
                 return self.assignment_statement();
             } else if self.current_token_is(Token::Name("".to_string())) && 
