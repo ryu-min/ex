@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap};
 
-use super::{parser::{FunctionDefExpression, Expression, ExpressionVisitResult, ExpressionVisitor}, tokenizer::Token};
+use super::{expressions::{FunctionDefExpression, Expression, ExpressionVisitResult, ExpressionVisitor}, tokenizer::Token};
 #[derive(Clone, PartialEq, Debug)]
 pub enum ValueVariant {
     String(String),
@@ -65,7 +65,7 @@ impl Interpreter {
         self.var_maps.get(&name).cloned()
     }
 
-    fn call_std_func(&mut self, expr: &crate::ex_core::parser::FunctionCallExpression) -> ExpressionVisitResult {
+    fn call_std_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
             let f = self.std_funcs.get(&expr.name).unwrap().clone();
             let arg_count = &expr.args.len();
             for arg_expr in expr.args.iter() {
@@ -93,7 +93,7 @@ impl Interpreter {
             Ok(())
         }
         
-    fn call_user_func(&mut self, expr: &crate::ex_core::parser::FunctionCallExpression) -> ExpressionVisitResult {
+    fn call_user_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
         let user_f = self.user_funcs.get(&expr.name).unwrap().clone();
         for expr in user_f.body.iter() {
             expr.accept(self)?;
@@ -116,17 +116,17 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_float_literal_expression(&mut self, expr: &crate::ex_core::parser::FloatLiteralExpression) -> ExpressionVisitResult {
+    fn visit_float_literal_expression(&mut self, expr: &crate::ex_core::expressions::FloatLiteralExpression) -> ExpressionVisitResult {
         self.values_stack.push(ValueVariant::Float(expr.f));
         Ok(())
     }
 
-    fn visit_string_literal_expression(&mut self, expr: &crate::ex_core::parser::StringLiteralExpression) -> ExpressionVisitResult {
+    fn visit_string_literal_expression(&mut self, expr: &crate::ex_core::expressions::StringLiteralExpression) -> ExpressionVisitResult {
         self.values_stack.push(ValueVariant::String(expr.s.clone()));
         Ok(())
     }
 
-    fn visit_name_expression(&mut self, expr: &crate::ex_core::parser::NameExpression) -> ExpressionVisitResult {
+    fn visit_name_expression(&mut self, expr: &crate::ex_core::expressions::NameExpression) -> ExpressionVisitResult {
         if let Some(value) = self.var_maps.get(&expr.name) {
             self.values_stack.push(value.clone());
             return Ok(());
@@ -135,7 +135,7 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_unary_expression(&mut self, un_expr: &crate::ex_core::parser::UnaryExpression) -> ExpressionVisitResult {
+    fn visit_unary_expression(&mut self, un_expr: &crate::ex_core::expressions::UnaryExpression) -> ExpressionVisitResult {
         un_expr.expr.accept(self)?;
         let op = un_expr.op.clone();
         if let Some(val) = self.values_stack.pop() {
@@ -176,7 +176,7 @@ impl ExpressionVisitor for Interpreter {
         Ok(())          
 
     }
-    fn visit_binary_expression(&mut self, expr: &crate::ex_core::parser::BinaryExpression) -> ExpressionVisitResult {
+    fn visit_binary_expression(&mut self, expr: &crate::ex_core::expressions::BinaryExpression) -> ExpressionVisitResult {
         expr.left.accept(self)?;
         expr.right.accept(self)?;
         let op = expr.op.clone();
@@ -234,7 +234,7 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_assignment_expression(&mut self, expr: &crate::ex_core::parser::AssignmentExpression) -> ExpressionVisitResult {
+    fn visit_assignment_expression(&mut self, expr: &crate::ex_core::expressions::AssignmentExpression) -> ExpressionVisitResult {
         expr.value.accept(self)?;
         if let Some(value) = self.values_stack.pop() {
             self.var_maps.insert(expr.name.clone(), value);
@@ -244,12 +244,12 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    fn visit_function_def_expression(&mut self, expr: &crate::ex_core::parser::FunctionDefExpression) -> ExpressionVisitResult {
+    fn visit_function_def_expression(&mut self, expr: &crate::ex_core::expressions::FunctionDefExpression) -> ExpressionVisitResult {
         self.user_funcs.insert(expr.name.clone(), expr.clone());
         return Ok(());
     }
 
-    fn visit_function_call_expression(&mut self,  expr: &crate::ex_core::parser::FunctionCallExpression) -> ExpressionVisitResult {
+    fn visit_function_call_expression(&mut self,  expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
         if self.std_funcs.contains_key(&expr.name) {
             return self.call_std_func(expr);
         } else if self.user_funcs.contains_key(&expr.name) {
@@ -260,14 +260,14 @@ impl ExpressionVisitor for Interpreter {
     }
 
     
-    fn visit_statement_list_expression(&mut self, expr: &crate::ex_core::parser::StatementListExpression) -> ExpressionVisitResult {
+    fn visit_statement_list_expression(&mut self, expr: &crate::ex_core::expressions::StatementListExpression) -> ExpressionVisitResult {
         for statement in expr.statement_list.iter() {
             statement.accept(self)?;
         }
         Ok(())
     }
 
-    fn visit_return_expression(&mut self, expr: &crate::ex_core::parser::ReturnExpression) -> ExpressionVisitResult {
+    fn visit_return_expression(&mut self, expr: &crate::ex_core::expressions::ReturnExpression) -> ExpressionVisitResult {
         return expr.expr.accept(self);
     }
 
