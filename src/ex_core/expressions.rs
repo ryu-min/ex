@@ -180,11 +180,11 @@ impl Expression for FunctionCallExpression {
 #[derive(Clone)]
 pub struct FunctionDefExpression {
     pub name: String,
-    pub args: Vec<Box<dyn Expression>>,
+    pub args: Vec<String>,
     pub body: Vec<Box<dyn Expression>>
 }
 impl FunctionDefExpression {
-    pub fn new(name: String, args: Vec<Box<dyn Expression>>, body: Vec<Box<dyn Expression>>) -> Self {
+    pub fn new(name: String, args: Vec<String>, body: Vec<Box<dyn Expression>>) -> Self {
         FunctionDefExpression {
             name : name,
             args : args,

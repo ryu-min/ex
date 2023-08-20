@@ -94,7 +94,19 @@ impl Interpreter {
         }
         
     fn call_user_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
+        
+        
         let user_f = self.user_funcs.get(&expr.name).unwrap().clone();
+        for arg in expr.args.iter() {
+            arg.accept(self)?;
+        }
+        let mut user_args = user_f.args;
+        user_args.reverse();
+        for arg_name in user_args.iter() {
+            if let Some(arg_value) = self.values_stack.pop() {
+                self.var_maps.insert(arg_name.clone(), arg_value);
+            }
+        }
         for expr in user_f.body.iter() {
             expr.accept(self)?;
         }
@@ -309,6 +321,21 @@ mod tests {
         interp.interp_expr(expr).unwrap();
         assert_eq!(true, true);
     }
+
+    #[test]
+    fn function_call_with_args() {
+        let prog : String = "fn test(a) { \n\
+                                writeln(a) \n\
+                            }\n\
+                            test(123)".to_string();    
+        let tokens = crate::ex_core::tokenize(&prog);
+        let expr = crate::ex_core::parser::Parser::new(&tokens).parse().unwrap();
+        let mut interp = crate::ex_core::interp::Interpreter::new(); 
+        interp.interp_expr(expr).unwrap();
+        assert_eq!(true, true);
+    }
+
+
     
     
 }

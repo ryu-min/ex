@@ -104,14 +104,14 @@ impl Parser {
     fn function_call_statement(&mut self) -> ParseResult {
 
         let f_name = self.read_name()?;
-        let f_args = self.read_func_args()?;
+        let f_args = self.read_func_call_args()?;
         return Ok(Box::new(FunctionCallExpression::new(f_name, f_args)));
     }
 
     fn function_def_statement(&mut self) -> ParseResult {
         self.eat(Token::Fn)?;
         let f_name = self.read_name()?;
-        let f_args = self.read_func_args()?;
+        let f_args = self.read_func_def_args()?;
         let mut f_body : Vec<Box<dyn Expression>> = Vec::new();
         self.eat(Token::OpenCurlyBrace)?;
                     self.skip_new_lines();
@@ -268,7 +268,33 @@ impl Parser {
         }
     }
 
-    fn read_func_args(&mut self ) -> Result<Vec<Box<dyn Expression>>, String> {
+    fn read_func_def_args(&mut self) -> Result<Vec<String>, String> {
+        self.eat(Token::OpenBrace)?;
+        let mut f_args : Vec<String> = Vec::new();
+        loop {
+            if let Some(current_token) = self.peek_current_token() {
+                match current_token {
+                    Token::CloseBrace => {
+                        break;
+                    }
+                    Token::Comma => {
+                        self.advance();
+                    }
+                    Token::Name(n) => {
+                        f_args.push(n);
+                        self.advance();
+                    }
+                    _ => {
+                        return Err(format!("Token {} not supported in function def args", current_token.to_string()));
+                    }
+                }
+            }
+        }
+        self.eat(Token::CloseBrace)?;
+        Ok(f_args)
+    } 
+
+    fn read_func_call_args(&mut self) -> Result<Vec<Box<dyn Expression>>, String> {
         self.eat(Token::OpenBrace)?;
         let mut f_args : Vec<Box<dyn Expression>> = Vec::new();
         loop {
