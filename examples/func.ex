@@ -1,9 +1,5 @@
-fn test(f, s) {
-    write("first arg is ", f)
-    writeln()
-    write("second arg is ", s)
-    writeln()
+fn sum(a, b) {
+    return a + b
 }
-test("1", "2")
-test("3", "4")
-test("5", "6")
+var c = sum(3, 4)
+write(c)
