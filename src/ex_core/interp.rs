@@ -28,10 +28,11 @@ impl fmt::Display for ValueVariant {
 }
 
 type UserFuncMap = HashMap<String, FunctionDefExpression>;
+type ValueScope = HashMap<String, ValueVariant>;
 
 pub struct Interpreter {
     values_stack: Vec<ValueVariant>,
-    var_maps: HashMap<String, ValueVariant>,
+    var_scopes: Vec<ValueScope>,
     std_funcs: StdFuncMap,
     user_funcs: UserFuncMap
 }
@@ -46,9 +47,12 @@ impl Interpreter {
                 std_fucs.insert(fname, f);
             }
         }
+        let mut var_scopes : Vec<ValueScope> = Vec::new();
+        // value scope
+        var_scopes.push(ValueScope::new());
         return Interpreter {
             values_stack : vec![], 
-            var_maps: HashMap::new(),
+            var_scopes: var_scopes,
             std_funcs : std_fucs,
             user_funcs : HashMap::new()
         };
@@ -62,7 +66,8 @@ impl Interpreter {
     }
 
     pub fn _get_var_value(&mut self, name: String) -> Option<ValueVariant> {
-        self.var_maps.get(&name).cloned()
+        assert!(self.var_scopes.len() >= 1);
+        self.var_scopes.last().unwrap().get(&name).cloned()
     }
 
     fn call_std_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
@@ -94,28 +99,25 @@ impl Interpreter {
         }
         
     fn call_user_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
-        
-        
+        assert!(self.var_scopes.len() >= 1);
+        self.var_scopes.push(ValueScope::new()); 
         let user_f = self.user_funcs.get(&expr.name).unwrap().clone();
         for arg in expr.args.iter() {
             arg.accept(self)?;
         }
         let mut user_args = user_f.args;
+        
         user_args.reverse();
         for arg_name in user_args.iter() {
             if let Some(arg_value) = self.values_stack.pop() {
-                self.var_maps.insert(arg_name.clone(), arg_value);
+                let n = self.var_scopes.len();
+                self.var_scopes[n - 1].insert(arg_name.clone(), arg_value);
             }
         }
         for expr in user_f.body.iter() {
             expr.accept(self)?;
         }
-        //TODO
-        //1. visit all parameters
-        //2. match stack values to function args
-        //3. save to var_maps
-        //use
-
+        self.var_scopes.pop();
         Ok(())
     }
 }
@@ -139,7 +141,8 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_name_expression(&mut self, expr: &crate::ex_core::expressions::NameExpression) -> ExpressionVisitResult {
-        if let Some(value) = self.var_maps.get(&expr.name) {
+        assert!(self.var_scopes.len() >= 1);
+        if let Some(value) = self.var_scopes.last().unwrap().get(&expr.name) {
             self.values_stack.push(value.clone());
             return Ok(());
         } else {
@@ -247,9 +250,11 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_assignment_expression(&mut self, expr: &crate::ex_core::expressions::AssignmentExpression) -> ExpressionVisitResult {
+        assert!(self.var_scopes.len() >= 1);
         expr.value.accept(self)?;
         if let Some(value) = self.values_stack.pop() {
-            self.var_maps.insert(expr.name.clone(), value);
+            let len = self.var_scopes.len(); 
+            self.var_scopes[len - 1].insert(expr.name.clone(), value);
             Ok(())
         } else {
             Err(String::from("no value for assgignment expression"))
