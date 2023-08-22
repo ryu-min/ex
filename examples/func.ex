@@ -1,5 +1,10 @@
-fn sum(a, b) {
+fn add(a, b) {
     return a + b
 }
-var c = sum(3, 4)
-write(c)
+fn minus(a) {
+    return a - 1
+}
+
+var c = add(2 + 2 + 2, 2)
+var b = minus(c)
+write(b)

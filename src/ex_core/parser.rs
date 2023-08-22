@@ -50,7 +50,7 @@ impl Parser {
     }
 
     /// 'statement' function match next syntax pattern:
-    /// {assignment_statement} | {function call}
+    /// {assignment_statement} | {function call} | {function def} | {return_expr} | {expr}
     fn statement(&mut self) -> ParseResult {
         if let Some(_) = self.peek_current_token() {
             if self.current_token_is(Token::Var) {
@@ -65,9 +65,9 @@ impl Parser {
                 return self.statement();
             } else if self.current_token_is(Token::Return) {
                 self.advance();
-                return self.expr();    
+                return self.base_expr();    
             } else {
-                return self.expr();
+                return self.base_expr();
             }
         } else {
             return Err(String::from("no token for statement"));
@@ -127,7 +127,7 @@ impl Parser {
 
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*
-    fn expr(&mut self) -> ParseResult {
+    fn base_expr(&mut self) -> ParseResult {
         let mut result = self.temr()?;
         loop {
             if let Some(token) = self.peek_current_token() {
@@ -190,7 +190,7 @@ impl Parser {
             }
             Token::OpenBrace => {
                 self.advance();
-                let result = self.expr()?;
+                let result = self.base_expr()?;
                 self.eat(Token::CloseBrace)?;
                 return Ok(result); 
             }
@@ -307,7 +307,7 @@ impl Parser {
                         self.advance();
                     }
                     _ => {
-                        let arg_expression = self.expr()?;
+                        let arg_expression = self.statement()?;
                         f_args.push(arg_expression);
                     }
                 }
