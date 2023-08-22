@@ -47,7 +47,9 @@ pub enum Token {
     Exec,
     Fn,
     Return,
-    NewLine
+    NewLine, 
+    True,
+    False
  }
 
  impl fmt::Display for Token {
@@ -73,6 +75,8 @@ pub enum Token {
             Token::NewLine => write!(f, "NEW LINE TOKEN"),
             Token::Fn => write!(f, "FN TOKEN"),
             Token::Return => write!(f, "RETURN TOKEN"),
+            Token::True => write!(f, "TRUE TOKEN"),
+            Token::False => write!(f, "FALSE TOKEN"),
         }
     }
 }
@@ -152,19 +156,31 @@ fn read_number_token(source: &mut String) -> Option<Token> {
 }
 
 
+
 fn read_reserved_token(source: &mut String) -> Option<Token> { 
-    if source == "var" || source.starts_with("var ")  {
-        source.replace_range(..4, "");
+
+    if try_read_reserved_word("var", source) {
         return Some(Token::Var);
-    } else if source == "fn" || source.starts_with("fn ") {
-        source.replace_range(..3, "");
+    } else if try_read_reserved_word("fn", source) {
         return Some(Token::Fn);
-     } else if source == "return" || source.starts_with("return ") {
-        source.replace_range(..7, "");
-        return Some(Token::Return);   
-    }
+    } else if try_read_reserved_word("return", source) {
+        return Some(Token::Return);
+    } else if try_read_reserved_word("true", source) {
+        return Some(Token::True);
+    } else if try_read_reserved_word("false", source) {
+        return Some(Token::False);
+    } 
     None
 }
+
+fn try_read_reserved_word(reserved: &str, source: &mut String) -> bool {
+    let reserved_with_space = reserved.to_owned() + " ";
+    if source == reserved || source.starts_with(&reserved_with_space) {
+        source.replace_range(..reserved.len(), "");
+        return true;
+    }
+    return false;
+} 
 
 
 fn read_name_token(source: &mut String) -> Option<Token> {
@@ -219,7 +235,8 @@ mod tests {
         let program: String = String::from("var x = 10 \n\
                                             var y = 20.5 \n\
                                             var s = \"str\" \\
-                                            x = x * ( x + y )");
+                                            x = x * ( x + y ) \\
+                                            var a = true");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -248,7 +265,14 @@ mod tests {
             Token::Plus,
             Token::Name(String::from("y")),
             Token::CloseBrace,
-            Token::NewLine
+            Token::NewLine,
+
+            Token::Var,
+            Token::Name(String::from("a")),
+            Token::Assignment,
+            Token::True,
+            Token::NewLine,
+
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
