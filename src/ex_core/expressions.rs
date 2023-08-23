@@ -8,6 +8,7 @@ pub trait ExpressionVisitor {
     fn visit_float_literal_expression(&mut self, expr: &FloatLiteralExpression) -> ExpressionVisitResult;
     fn visit_int_literal_expression(&mut self, expr: &IntLiteralExpression) -> ExpressionVisitResult;
     fn visit_string_literal_expression(&mut self, expr: &StringLiteralExpression) -> ExpressionVisitResult;
+    fn visit_bool_literal_expression(&mut self, expr: &BoolLiteralExpression) -> ExpressionVisitResult;
     fn visit_name_expression(&mut self, expr: &NameExpression) -> ExpressionVisitResult;
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
@@ -59,8 +60,6 @@ impl Expression for FloatLiteralExpression {
     }
 }
 
-
-
 #[derive(Clone)]
 pub struct StringLiteralExpression {
     pub s : String
@@ -73,6 +72,19 @@ impl StringLiteralExpression {
 impl Expression for StringLiteralExpression {
     fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
         visitor.visit_string_literal_expression(self)
+    }
+}
+
+#[derive(Clone)]
+pub struct BoolLiteralExpression {
+    pub b : bool
+}
+impl BoolLiteralExpression {
+    pub fn new(b: bool) -> Self { Self{ b: b} }
+}
+impl Expression for BoolLiteralExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_bool_literal_expression(self)
     }
 }
 

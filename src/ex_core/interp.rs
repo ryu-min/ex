@@ -9,7 +9,8 @@ use super::{expressions::{FunctionDefExpression, Expression, ExpressionVisitResu
 pub enum ValueVariant {
     String(String),
     Integer(i64),
-    Float(f64)
+    Float(f64), 
+    Bool(bool)
 }
 impl fmt::Display for ValueVariant {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -22,6 +23,9 @@ impl fmt::Display for ValueVariant {
             }
             ValueVariant::Float(fl) => {
                 write!(f, "{}", fl)
+            }
+            ValueVariant::Bool(b) => {
+                write!(f, "{}", b)
             }
         }
     }
@@ -125,18 +129,23 @@ impl Interpreter {
 
 
 impl ExpressionVisitor for Interpreter {
-    fn visit_int_literal_expression(&mut self, expr: &super::IntLiteralExpression) -> ExpressionVisitResult {
-        self.values_stack.push(ValueVariant::Integer(expr.i));
-        Ok(())
-    }
-
     fn visit_float_literal_expression(&mut self, expr: &crate::ex_core::expressions::FloatLiteralExpression) -> ExpressionVisitResult {
         self.values_stack.push(ValueVariant::Float(expr.f));
         Ok(())
     }
 
+    fn visit_int_literal_expression(&mut self, expr: &super::IntLiteralExpression) -> ExpressionVisitResult {
+        self.values_stack.push(ValueVariant::Integer(expr.i));
+        Ok(())
+    }
+
     fn visit_string_literal_expression(&mut self, expr: &crate::ex_core::expressions::StringLiteralExpression) -> ExpressionVisitResult {
         self.values_stack.push(ValueVariant::String(expr.s.clone()));
+        Ok(())
+    }
+
+    fn visit_bool_literal_expression(&mut self, expr: &super::BoolLiteralExpression) -> ExpressionVisitResult {
+        self.values_stack.push(ValueVariant::Bool(expr.b));
         Ok(())
     }
 
@@ -149,7 +158,6 @@ impl ExpressionVisitor for Interpreter {
             return Err(format!("unknown name '{}'", &expr.name));
         }
     }
-
     fn visit_unary_expression(&mut self, un_expr: &crate::ex_core::expressions::UnaryExpression) -> ExpressionVisitResult {
         un_expr.expr.accept(self)?;
         let op = un_expr.op.clone();
@@ -191,6 +199,7 @@ impl ExpressionVisitor for Interpreter {
         Ok(())          
 
     }
+
     fn visit_binary_expression(&mut self, expr: &crate::ex_core::expressions::BinaryExpression) -> ExpressionVisitResult {
         expr.left.accept(self)?;
         expr.right.accept(self)?;
@@ -266,6 +275,7 @@ impl ExpressionVisitor for Interpreter {
         return Ok(());
     }
 
+    
     fn visit_function_call_expression(&mut self,  expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
         if self.std_funcs.contains_key(&expr.name) {
             return self.call_std_func(expr);
@@ -276,16 +286,15 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
-    
+    fn visit_return_expression(&mut self, expr: &crate::ex_core::expressions::ReturnExpression) -> ExpressionVisitResult {
+        return expr.expr.accept(self);
+    }
+
     fn visit_statement_list_expression(&mut self, expr: &crate::ex_core::expressions::StatementListExpression) -> ExpressionVisitResult {
         for statement in expr.statement_list.iter() {
             statement.accept(self)?;
         }
         Ok(())
-    }
-
-    fn visit_return_expression(&mut self, expr: &crate::ex_core::expressions::ReturnExpression) -> ExpressionVisitResult {
-        return expr.expr.accept(self);
     }
 
 }

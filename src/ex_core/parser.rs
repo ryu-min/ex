@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression, BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression};
+use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression, BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression};
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -171,8 +171,6 @@ impl Parser {
         return Ok(result);
     }
     
-    /// 'factor' function match next syntax pattern:
-    /// FLOAT_LITERAL | STRING_LITERAL | NAME | {expr}
     fn factor(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
@@ -202,6 +200,14 @@ impl Parser {
             Token::Name(n) => {
                 self.advance();
                 return Ok(Box::new(NameExpression::new(n)));
+            }
+            Token::True => {
+                self.advance();
+                return Ok(Box::new(BoolLiteralExpression::new(true)));
+            }
+            Token::False => {
+                self.advance();
+                return Ok(Box::new(BoolLiteralExpression::new(false)));
             }
             _ => {
                 return Err(format!("Not valid factor {}", current_token.to_string()));
