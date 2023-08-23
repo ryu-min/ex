@@ -4,23 +4,20 @@ use std::fmt;
 pub fn tokenize(program: &String) -> Vec<Token> {
     let mut result : Vec<Token> = Vec::new();
     for line in program.lines().clone() {
-        // let splited_word = line.split(" ");
-        // for word in splited_word { 
-            let mut word_string = line.to_string();
-            while !word_string.is_empty() {
-                if let Some(token) = read_token_from_char(&mut word_string) {
-                    result.push(token)
-                } else if let Some(token) = read_token_from_string(&mut word_string) {
-                    result.push(token)    
+        let mut word_string = line.to_string();
+        while !word_string.is_empty() {
+            if let Some(token) = read_token_from_char(&mut word_string) {
+                result.push(token)
+            } else if let Some(token) = read_token_from_string(&mut word_string) {
+                result.push(token)    
+            } else {
+                if word_string.chars().next().unwrap() == ' ' {
+                    word_string.remove(0);
                 } else {
-                    if word_string.chars().next().unwrap() == ' ' {
-                        word_string.remove(0);
-                    } else {
-                        break;
-                    }
+                    break;
                 }
             }
-        //}
+        }
         result.push(Token::NewLine);
     }
     return result;
@@ -49,7 +46,9 @@ pub enum Token {
     Return,
     NewLine, 
     True,
-    False
+    False,
+    Eq,
+    NotEq,
  }
 
  impl fmt::Display for Token {
@@ -77,14 +76,15 @@ pub enum Token {
             Token::Return => write!(f, "RETURN TOKEN"),
             Token::True => write!(f, "TRUE TOKEN"),
             Token::False => write!(f, "FALSE TOKEN"),
+            Token::Eq => write!(f, "EQ TOKEN"),
+            Token::NotEq => write!(f, "NOT EQ TOKEN"),
         }
     }
 }
 
-fn char_to_token(ch : char) -> Option<Token> {
+fn char_to_simple_token(ch : char) -> Option<Token> {
     match ch {
         '.' =>      Some(Token::Dot),
-        '=' =>      Some(Token::Assignment),
         '(' =>      Some(Token::OpenBrace),
         ')' =>      Some(Token::CloseBrace),
         '{' =>      Some(Token::OpenCurlyBrace),
@@ -99,10 +99,18 @@ fn char_to_token(ch : char) -> Option<Token> {
 }
 
 fn read_token_from_char(source: &mut String) -> Option<Token> {
-    if let Some(ch) = source.chars().next() {
-        if let Some(token) = char_to_token(ch) {
+    let mut chars = source.chars();
+    if let Some(f_ch) = chars.next() {
+        if let Some(token) = char_to_simple_token(f_ch) {
             source.replace_range(0..1, "");
             return Some(token)
+        } else if f_ch == '=' {
+            if let Some(s_ch) = chars.next() {
+                if s_ch != '=' {
+                    source.replace_range(0..1, "");
+                    return Some(Token::Assignment);    
+                }
+            }
         }
     }
     None
@@ -158,7 +166,6 @@ fn read_number_token(source: &mut String) -> Option<Token> {
 
 
 fn read_reserved_token(source: &mut String) -> Option<Token> { 
-
     if try_read_reserved_word("var", source) {
         return Some(Token::Var);
     } else if try_read_reserved_word("fn", source) {
@@ -169,7 +176,11 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
         return Some(Token::True);
     } else if try_read_reserved_word("false", source) {
         return Some(Token::False);
-    } 
+    } else if try_read_reserved_word("==", source) {
+        return Some(Token::Eq);
+    } else if try_read_reserved_word("!=", source) {
+        return Some(Token::NotEq);
+    }
     None
 }
 
@@ -232,11 +243,13 @@ mod tests {
 
     #[test]
     fn tokenizer_test() {
-        let program: String = String::from("var x = 10 \n\
+        let mut program: String = String::from("var x = 10 \n\
                                             var y = 20.5 \n\
                                             var s = \"str\" \\
                                             x = x * ( x + y ) \\
-                                            var a = true");
+                                            var a = true \n\
+                                            var c = a == true\n\
+                                            var bu = c != false");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -273,10 +286,27 @@ mod tests {
             Token::True,
             Token::NewLine,
 
+            Token::Var,
+            Token::Name(String::from("c")),
+            Token::Assignment,
+            Token::Name(String::from("a")),
+            Token::Eq,
+            Token::True,
+            Token::NewLine,
+
+            Token::Var, 
+            Token::Name(String::from("bu")),
+            Token::Assignment,
+            Token::Name(String::from("c")),
+            Token::NotEq,
+            Token::False,
+            Token::NewLine,
         ];
+
+        // var bu = c != false
+
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
-
     }
 
     #[test]
