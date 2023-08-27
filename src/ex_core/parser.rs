@@ -65,9 +65,9 @@ impl Parser {
                 return self.statement();
             } else if self.current_token_is(Token::Return) {
                 self.advance();
-                return self.base_expr();    
+                return self.term();    
             } else {
-                return self.base_expr();
+                return self.term();
             }
         } else {
             return Err(String::from("no token for statement"));
@@ -127,14 +127,14 @@ impl Parser {
 
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*
-    fn base_expr(&mut self) -> ParseResult {
-        let mut result = self.temr()?;
+    fn term(&mut self) -> ParseResult {
+        let mut result = self.factor()?;
         loop {
             if let Some(token) = self.peek_current_token() {
                 match token {
                     Token::Plus | Token::Minus => {
                         self.advance();
-                        let expr = self.temr()?;
+                        let expr = self.factor()?;
                         result =  Box::new(BinaryExpression::new(token, result, expr));
                     }
                     _ => {
@@ -150,14 +150,14 @@ impl Parser {
 
     /// 'term' function match next syntax pattern:
     /// {factor} [[MUL|DIV] {factor}]*
-    fn temr(&mut self) -> ParseResult {
-        let mut result = self.factor()?;
+    fn factor(&mut self) -> ParseResult {
+        let mut result = self.unary()?;
         loop {
             if let Some(token) = self.peek_current_token() {
                 match token {
                     Token::Multi | Token::Devide => {
                         self.advance();
-                        let expr = self.factor()?;
+                        let expr = self.unary()?;
                         result =  Box::new(BinaryExpression::new(token, result, expr));
                     }
                     _ => {
@@ -170,8 +170,22 @@ impl Parser {
         }
         return Ok(result);
     }
+
+    fn unary(&mut self) -> ParseResult {
+        if let Some(token) = self.peek_current_token() {
+            match token {
+                Token::Plus|Token::Minus => {
+                    self.advance();
+                    let expr = self.unary()?;
+                    return Ok(Box::new(UnaryExpression::new(token, expr)));
+                }
+                _ => {}
+            }
+        }
+        return self.primary();
+    }
     
-    fn factor(&mut self) -> ParseResult {
+    fn primary(&mut self) -> ParseResult {
         let current_token = self.peek_current_token().unwrap();
         match current_token {
             Token::IntLiteral(i) => {
@@ -188,14 +202,9 @@ impl Parser {
             }
             Token::OpenBrace => {
                 self.advance();
-                let result = self.base_expr()?;
+                let result = self.term()?;
                 self.eat(Token::CloseBrace)?;
                 return Ok(result); 
-            }
-            Token::Plus|Token::Minus => {
-                self.advance();
-                let expr = self.factor()?;
-                return Ok(Box::new(UnaryExpression::new(current_token, expr)));
             }
             Token::Name(n) => {
                 self.advance();
@@ -214,6 +223,14 @@ impl Parser {
             }
         }
     }
+
+
+
+
+
+
+
+
 
     fn advance(&mut self) {
         self.pos += 1;
