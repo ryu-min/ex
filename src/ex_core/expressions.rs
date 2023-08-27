@@ -124,7 +124,6 @@ impl Expression for BinaryExpression {
     }
 }
 
-
 #[derive(Clone)]
 pub struct AssignmentExpression {
     pub name: String,

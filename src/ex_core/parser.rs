@@ -65,9 +65,9 @@ impl Parser {
                 return self.statement();
             } else if self.current_token_is(Token::Return) {
                 self.advance();
-                return self.term();    
+                return self.expression();    
             } else {
-                return self.term();
+                return self.expression();
             }
         } else {
             return Err(String::from("no token for statement"));
@@ -124,6 +124,28 @@ impl Parser {
         return Ok(Box::new(FunctionDefExpression::new(f_name, f_args, f_body)));
     }
 
+    fn expression(&mut self) -> ParseResult {
+        return self.equality();
+    }
+
+    fn equality(&mut self) -> ParseResult {
+        let mut result = self.term()?;
+        loop {
+            if let Some(token) = self.peek_current_token() {
+                match token {
+                    Token::Eq | Token::NotEq => {
+                        self.advance();
+                        let expr = self.term()?;
+                        result = Box::new(BinaryExpression::new(token,result,expr));
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+        }
+        return Ok(result);
+    }
 
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*
@@ -202,7 +224,7 @@ impl Parser {
             }
             Token::OpenBrace => {
                 self.advance();
-                let result = self.term()?;
+                let result = self.expression()?;
                 self.eat(Token::CloseBrace)?;
                 return Ok(result); 
             }
@@ -217,6 +239,10 @@ impl Parser {
             Token::False => {
                 self.advance();
                 return Ok(Box::new(BoolLiteralExpression::new(false)));
+            }
+            Token::NewLine => {
+                self.advance();
+                return self.primary();
             }
             _ => {
                 return Err(format!("Not valid factor {}", current_token.to_string()));

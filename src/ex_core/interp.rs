@@ -207,17 +207,29 @@ impl ExpressionVisitor for Interpreter {
         if let (Some(r), Some(l)) = (self.values_stack.pop(), self.values_stack.pop()) {
             match (l, r) {
                 (ValueVariant::Float(l_float), ValueVariant::Float(r_float)) => {
-                    let res;
                     match op {
-                        Token::Plus => res = l_float + r_float,
-                        Token::Minus => res = l_float - r_float,
-                        Token::Multi => res = l_float * r_float,
-                        Token::Devide => res = l_float / r_float,
+                        Token::Plus => {
+                            self.values_stack.push(ValueVariant::Float(l_float + r_float));
+                        }
+                        Token::Minus => {
+                            self.values_stack.push(ValueVariant::Float(l_float - r_float));
+                        }
+                        Token::Multi => {
+                            self.values_stack.push(ValueVariant::Float(l_float * r_float));
+                        }
+                        Token::Devide => {
+                            self.values_stack.push(ValueVariant::Float(l_float / r_float));
+                        }
+                        Token::Eq => {
+                            self.values_stack.push(ValueVariant::Bool(l_float == r_float));
+                        }
+                        Token::NotEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_float != l_float));
+                        }
                         _ => {
                             return Err(format!("binary op {} not supported for float's", op.to_string()));
                         }
                     }
-                    self.values_stack.push(ValueVariant::Float(res));
                 }
                 (ValueVariant::Integer(l_int), ValueVariant::Integer(r_int)) => {
                     match op {
@@ -233,6 +245,12 @@ impl ExpressionVisitor for Interpreter {
                         Token::Devide => {
                             self.values_stack.push(ValueVariant::Float(l_int as f64 / r_int as f64));
                         }
+                        Token::Eq => {
+                            self.values_stack.push(ValueVariant::Bool(l_int == r_int));
+                        }
+                        Token::NotEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_int != r_int));
+                        }
                         _ => {
                             return Err(format!("binary op {} not supported for float's", op.to_string()));
                         }
@@ -243,13 +261,34 @@ impl ExpressionVisitor for Interpreter {
                         Token::Plus => {
                             self.values_stack.push(ValueVariant::String(l_string + &r_string));
                         }
+                        Token::Eq => {
+                            self.values_stack.push(ValueVariant::Bool(l_string == r_string));
+                        }
+                        Token::NotEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_string != r_string));
+                        }
                         _ => {
                             return Err(format!("binary op {} not supported for strings", op.to_string()));
                         }
                     }
                 }
+                (ValueVariant::Bool(lb), ValueVariant::Bool(rb)) => {
+                    match op {
+                        Token::Eq => {
+                            self.values_stack.push(ValueVariant::Bool(lb == rb));
+                        }
+                        Token::NotEq => {
+                            self.values_stack.push(ValueVariant::Bool(lb != rb));
+                        }
+                        _ => {
+                            return Err(format!("binary op {} not supported for bool", op.to_string()));
+                        }
+                    }
+                }
+
+                
                 _ => {
-                    return Err("for now binary operation for this args".to_string());
+                    return Err(format!("for now binary operation {} for this args", op.to_string()));
                 }
             }
         } else {
