@@ -129,11 +129,30 @@ impl Parser {
     }
 
     fn equality(&mut self) -> ParseResult {
-        let mut result = self.term()?;
+        let mut result = self.compression()?;
         loop {
             if let Some(token) = self.peek_current_token() {
                 match token {
                     Token::Eq | Token::NotEq => {
+                        self.advance();
+                        let expr = self.compression()?;
+                        result = Box::new(BinaryExpression::new(token,result,expr));
+                    }
+                    _ => {
+                        break;
+                    }
+                }
+            }
+        }
+        return Ok(result);
+    }
+
+    fn compression(&mut self) -> ParseResult {
+        let mut result = self.term()?;
+        loop {
+            if let Some(token) = self.peek_current_token() {
+                match token {
+                    Token::More | Token::MoreEq | Token::Less | Token::LessEq => {
                         self.advance();
                         let expr = self.term()?;
                         result = Box::new(BinaryExpression::new(token,result,expr));
@@ -146,6 +165,9 @@ impl Parser {
         }
         return Ok(result);
     }
+           
+    
+
 
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*
