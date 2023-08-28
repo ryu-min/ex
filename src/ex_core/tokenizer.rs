@@ -49,6 +49,10 @@ pub enum Token {
     False,
     Eq,
     NotEq,
+    More, 
+    MoreEq,
+    Less,
+    LessEq,
  }
 
  impl fmt::Display for Token {
@@ -78,6 +82,10 @@ pub enum Token {
             Token::False => write!(f, "FALSE TOKEN"),
             Token::Eq => write!(f, "EQ TOKEN"),
             Token::NotEq => write!(f, "NOT EQ TOKEN"),
+            Token::More => write!(f, "MORE TOKEN"),
+            Token::MoreEq => write!(f, "MORE EQ TOKEN"),
+            Token::Less => write!(f, "LESS TOKEN"),
+            Token::LessEq => write!(f, "LESS EQ TOKEN"),
         }
     }
 }
@@ -109,6 +117,20 @@ fn read_token_from_char(source: &mut String) -> Option<Token> {
                 if s_ch != '=' {
                     source.replace_range(0..1, "");
                     return Some(Token::Assignment);    
+                }
+            }
+        } else if f_ch == '>' {
+            if let Some(s_ch) = chars.next() {
+                if s_ch != '=' {
+                    source.replace_range(0..1, "");
+                    return Some(Token::More);    
+                }
+            }
+        } else if f_ch == '<' {
+            if let Some(s_ch) = chars.next() {
+                if s_ch != '=' {
+                    source.replace_range(0..1, "");
+                    return Some(Token::Less);    
                 }
             }
         }
@@ -180,6 +202,10 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
         return Some(Token::Eq);
     } else if try_read_reserved_word("!=", source) {
         return Some(Token::NotEq);
+    } else if try_read_reserved_word(">=", source) {
+        return Some(Token::MoreEq);
+    } else if try_read_reserved_word("<=", source) {
+        return Some(Token::LessEq);
     }
     None
 }
@@ -249,7 +275,11 @@ mod tests {
                                             x = x * ( x + y ) \\
                                             var a = true \n\
                                             var c = a == true\n\
-                                            var bu = c != false");
+                                            var bu = c != false \n\
+                                            var boo1 = 1 >= 2 \n\
+                                            var boo2 = 1 > 2 \n\
+                                            var boo3 = 1 <= 2 \n\
+                                            var boo4 = 1 < 2 \n");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -301,10 +331,39 @@ mod tests {
             Token::NotEq,
             Token::False,
             Token::NewLine,
+
+            Token::Var,
+            Token::Name(String::from("boo1")),
+            Token::Assignment,
+            Token::IntLiteral(1),
+            Token::MoreEq,
+            Token::IntLiteral(2),
+            Token::NewLine,
+
+            Token::Var,
+            Token::Name(String::from("boo2")),
+            Token::Assignment,
+            Token::IntLiteral(1),
+            Token::More,
+            Token::IntLiteral(2),
+            Token::NewLine,
+
+            Token::Var,
+            Token::Name(String::from("boo3")),
+            Token::Assignment,
+            Token::IntLiteral(1),
+            Token::LessEq,
+            Token::IntLiteral(2),
+            Token::NewLine,
+
+            Token::Var,
+            Token::Name(String::from("boo4")),
+            Token::Assignment,
+            Token::IntLiteral(1),
+            Token::Less,
+            Token::IntLiteral(2),
+            Token::NewLine,        
         ];
-
-        // var bu = c != false
-
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
     }
