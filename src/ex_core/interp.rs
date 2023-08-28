@@ -224,7 +224,19 @@ impl ExpressionVisitor for Interpreter {
                             self.values_stack.push(ValueVariant::Bool(l_float == r_float));
                         }
                         Token::NotEq => {
-                            self.values_stack.push(ValueVariant::Bool(l_float != l_float));
+                            self.values_stack.push(ValueVariant::Bool(l_float != r_float));
+                        }
+                        Token::More => {
+                            self.values_stack.push(ValueVariant::Bool(l_float > r_float));
+                        }
+                        Token::MoreEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_float >= r_float));
+                        }
+                        Token::Less => {
+                            self.values_stack.push(ValueVariant::Bool(l_float < r_float));
+                        }
+                        Token::LessEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_float <= r_float));
                         }
                         _ => {
                             return Err(format!("binary op {} not supported for float's", op.to_string()));
@@ -250,6 +262,18 @@ impl ExpressionVisitor for Interpreter {
                         }
                         Token::NotEq => {
                             self.values_stack.push(ValueVariant::Bool(l_int != r_int));
+                        }
+                        Token::More => {
+                            self.values_stack.push(ValueVariant::Bool(l_int > r_int));
+                        }
+                        Token::MoreEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_int >= r_int));
+                        }
+                        Token::Less => {
+                            self.values_stack.push(ValueVariant::Bool(l_int < r_int));
+                        }
+                        Token::LessEq => {
+                            self.values_stack.push(ValueVariant::Bool(l_int <= r_int));
                         }
                         _ => {
                             return Err(format!("binary op {} not supported for float's", op.to_string()));
