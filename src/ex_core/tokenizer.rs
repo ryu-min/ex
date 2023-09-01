@@ -45,6 +45,7 @@ pub enum Token {
     Fn,
     Return,
     If,
+    Else,
     NewLine, 
     True,
     False,
@@ -88,6 +89,7 @@ pub enum Token {
             Token::Less => write!(f, "LESS TOKEN"),
             Token::LessEq => write!(f, "LESS EQ TOKEN"),
             Token::If => write!(f, "IF TOKEN"),
+            Token::Else => write!(f, "ELSE TOKEN"),
         }
     }
 }
@@ -196,6 +198,8 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
         return Some(Token::Fn);
     }  else if try_read_reserved_word("if", source) {
         return Some(Token::If);
+    }  else if try_read_reserved_word("else", source) {
+        return Some(Token::Else);
     } else if try_read_reserved_word("return", source) {
         return Some(Token::Return);
     } else if try_read_reserved_word("true", source) {
@@ -288,7 +292,8 @@ mod tests {
                                             var boo2 = 1 > 2 \n\
                                             var boo3 = 1 <= 2 \n\
                                             var boo4 = 1 < 2 \n\
-                                            if (boo4 == true) doSomething()\n");
+                                            if (boo4 == true) doSomething()\n\
+                                            else doNothing()\n");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -380,6 +385,12 @@ mod tests {
             Token::True,
             Token::CloseBrace,
             Token::Name(String::from("doSomething")),
+            Token::OpenBrace,
+            Token::CloseBrace,
+            Token::NewLine,
+ 
+            Token::Else,
+            Token::Name(String::from("doNothing")),
             Token::OpenBrace,
             Token::CloseBrace,
             Token::NewLine,

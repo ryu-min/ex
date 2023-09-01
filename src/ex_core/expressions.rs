@@ -13,6 +13,7 @@ pub trait ExpressionVisitor {
     fn visit_unary_expression(&mut self, expr: &UnaryExpression) -> ExpressionVisitResult;
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
+    fn visit_if_expression(&mut self, expr: &IfExpression) ->ExpressionVisitResult;
     fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
     fn visit_return_expression(&mut self, expr: &ReturnExpression) -> ExpressionVisitResult;
@@ -185,6 +186,29 @@ impl FunctionCallExpression {
 impl Expression for FunctionCallExpression {
     fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
         visitor.visit_function_call_expression(self)
+    }
+}
+
+
+#[derive(Clone)]
+pub struct IfExpression {
+    pub if_expr : Box<dyn Expression>,
+    pub true_expression : Vec<Box<dyn Expression>>,
+    pub false_expression : Vec<Box<dyn Expression>>    
+}
+
+impl IfExpression {
+    pub fn new(if_expr: Box<dyn Expression>, true_expression: Vec<Box<dyn Expression>>, false_expression: Vec<Box<dyn Expression>>) -> Self {
+        IfExpression {
+            if_expr: if_expr,
+            true_expression: true_expression,
+            false_expression : false_expression 
+        }
+    }
+}
+impl Expression for IfExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_if_expression(self)
     }
 }
 

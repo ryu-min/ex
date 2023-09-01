@@ -360,6 +360,29 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_if_expression(&mut self, expr: &super::IfExpression) ->ExpressionVisitResult {
+        expr.if_expr.accept(self)?;
+        if let Some(value) = self.values_stack.last() {
+            match value {
+                ValueVariant::Bool(b) => {
+                    if *b {
+                        for expr in expr.true_expression.iter() {
+                            expr.accept(self)?;
+                        } 
+                    } else {
+                        for expr in expr.false_expression.iter() {
+                            expr.accept(self)?;
+                        }   
+                    }
+                }
+                _ => {
+                    return Err("not expected result in if".to_string());
+                }
+            }
+        }
+        Ok(())
+    }
+
 }
 
 
@@ -405,6 +428,8 @@ mod tests {
                                 writeln(a) \n\
                             }\n\
                             test(123)".to_string();    
+
+                            
         let tokens = crate::ex_core::tokenize(&prog);
         let expr = crate::ex_core::parser::Parser::new(&tokens).parse().unwrap();
         let mut interp = crate::ex_core::interp::Interpreter::new(); 
@@ -413,6 +438,19 @@ mod tests {
     }
 
 
+
+    #[test]
+    fn if_test() {
+        let prog : String = "if (true) { \n\
+                                writeln(\"bububu\") \n\
+                            }\n".to_string();                                
+        let tokens = crate::ex_core::tokenize(&prog);
+        let expr = crate::ex_core::parser::Parser::new(&tokens).parse().unwrap();
+        let mut interp = crate::ex_core::interp::Interpreter::new(); 
+        interp.interp_expr(expr).unwrap();
+        assert_eq!(true, true);
+    }
+    
     
     
 }

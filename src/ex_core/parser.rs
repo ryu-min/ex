@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression, BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression};
+use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression, BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression};
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -60,6 +60,8 @@ impl Parser {
                     return self.function_call_statement();        
             } else if self.current_token_is(Token::Fn) {
                 return self.function_def_statement();
+            } else if self.current_token_is(Token::If) {
+                return self.if_statement();
             } else if self.current_token_is(Token::NewLine) {
                 self.advance();
                 return self.statement();
@@ -72,6 +74,31 @@ impl Parser {
         } else {
             return Err(String::from("no token for statement"));
         }
+    }
+
+    fn if_statement(&mut self) -> ParseResult {
+        self.eat(Token::If)?;
+        let if_expr = self.expression()?;
+        self.eat(Token::OpenCurlyBrace)?;
+        let mut true_expressions: Vec<Box<dyn Expression>> = Vec::new();
+        while !self.current_token_is(Token::CloseCurlyBrace) {
+            true_expressions.push( self.statement()?);
+            self.skip_new_lines();
+        }
+        self.skip_new_lines();
+        self.advance();
+        let mut false_expressions: Vec<Box<dyn Expression>> = Vec::new();
+        if self.current_token_is(Token::Else) {
+            self.eat(Token::Else)?;
+            self.eat(Token::OpenCurlyBrace)?;
+            while !self.current_token_is(Token::CloseCurlyBrace) {
+                false_expressions.push( self.statement()?);
+                self.skip_new_lines();
+            }
+            self.skip_new_lines();
+            self.advance();   
+        }
+        return Ok(Box::new(IfExpression::new(if_expr, true_expressions, false_expressions)));
     }
 
     /// 'assignment_statement' function match next syntax pattern:
