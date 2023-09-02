@@ -364,7 +364,7 @@ impl ExpressionVisitor for Interpreter {
                 match value {
                     ValueVariant::Bool(b) => {
                         if b {
-                            for expr in expr.true_exprs.iter() {
+                            for expr in expr.body_exprs.iter() {
                                 expr.accept(self)?;
                             } 
                         } else {

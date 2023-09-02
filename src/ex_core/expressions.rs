@@ -193,13 +193,13 @@ impl Expression for FunctionCallExpression {
 #[derive(Clone)]
 pub struct WhileExpression {
     pub while_expr : Box<dyn Expression>,
-    pub true_exprs : Vec<Box<dyn Expression>>,
+    pub body_exprs : Vec<Box<dyn Expression>>,
 }
 impl WhileExpression {
     pub fn new(while_expt: Box<dyn Expression>, true_exprs : Vec<Box<dyn Expression>>) -> Self {
         WhileExpression {
             while_expr : while_expt,
-            true_exprs : true_exprs
+            body_exprs : true_exprs
         }
     }
 }
