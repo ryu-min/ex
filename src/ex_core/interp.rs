@@ -69,9 +69,53 @@ impl Interpreter {
         }
     }
 
-    pub fn _get_var_value(&mut self, name: String) -> Option<ValueVariant> {
+    pub fn _get_var_value(&mut self, name: &String) -> Option<ValueVariant> {
         assert!(self.var_scopes.len() >= 1);
-        self.var_scopes.last().unwrap().get(&name).cloned()
+        self.var_scopes.last().unwrap().get(name).cloned()
+    }
+
+    fn _add_var_scope(&mut self) {
+        assert!(self.var_scopes.len() >= 1);
+        self.var_scopes.push(ValueScope::new());
+    }
+
+    fn _drop_var_scope(&mut self) {
+        assert!(self.var_scopes.len() >= 2);
+        self.var_scopes.pop();
+    }
+
+    fn _get_var(&mut self, name: &String) -> Option<&mut ValueVariant> {
+        assert!(self.var_scopes.len() >= 1);
+        for scope in self.var_scopes.iter_mut().rev() {
+            if let Some(res) = scope.get_mut(name) {
+                return Some(res);
+            }
+        }
+        None
+    }
+
+    fn add_var(&mut self, name: &String, var: &ValueVariant) {
+        assert!(self.var_scopes.len() >= 1);
+        let n = self.var_scopes.len();
+        self.var_scopes[n - 1].insert(name.clone(), var.clone());
+    }
+
+    fn get_current_stack_value(&mut self) -> Result<ValueVariant, String> {
+        if let Some(value) = self.values_stack.pop() {
+            return Ok(value);
+        }
+        Err("Expected value on stack".to_string())
+    }
+
+    fn value_variant_to_int(&mut self, v : &ValueVariant) -> Result<i64,String> {
+        match v {
+            ValueVariant::Integer(i) => {
+                Ok(*i)
+            }
+            _ => {
+                Err("expected int".to_string())
+            }
+        }
     }
 
     fn call_std_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
@@ -407,7 +451,22 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_for_expression(&mut self, expr: &super::ForExpression) -> ExpressionVisitResult {
-        todo!()
+        expr.l_bound.accept(self)?;
+        expr.r_bound.accept(self)?;
+        let r_bound = self.get_current_stack_value()?;
+        let l_bound = self.get_current_stack_value()?;
+        let mut l_bound_i = self.value_variant_to_int(&l_bound)?;
+        let r_bound_i = self.value_variant_to_int(&r_bound)?;
+        self.add_var(&expr.var_name, &l_bound);
+        while l_bound_i < r_bound_i {
+            for e in expr.body_exprs.iter() {
+                e.accept(self)?;
+            }
+            self.add_var(&expr.var_name, &ValueVariant::Integer(l_bound_i + 1));
+            let i_value = self._get_var_value(&expr.var_name).unwrap();
+            l_bound_i = self.value_variant_to_int(&i_value)?;
+        }
+        Ok(())
     }
 
 }
@@ -431,7 +490,7 @@ mod tests {
             let expr = crate::ex_core::parser::Parser::new(&crate::ex_core::tokenize(&prog)).parse().unwrap();
             let mut interp = crate::ex_core::interp::Interpreter::new(); 
             interp.interp_expr(expr).unwrap();
-            assert_eq!(interp._get_var_value("a".to_string()).unwrap(), *exp_res);
+            assert_eq!(interp._get_var_value(&"a".to_string()).unwrap(), *exp_res);
         }
     }
 
@@ -478,6 +537,17 @@ mod tests {
         assert_eq!(true, true);
     }
     
+    #[test]
+    fn for_test() {
+        let prog : String = "for i in [0, 10] { \n\
+            writeln(\"fuuu\") \n\
+        }\n".to_string();                                
+        let tokens = crate::ex_core::tokenize(&prog);
+        let expr = crate::ex_core::parser::Parser::new(&tokens).parse().unwrap();
+        let mut interp = crate::ex_core::interp::Interpreter::new(); 
+        interp.interp_expr(expr).unwrap();
+        assert_eq!(true, true);
+    }
     
     
 }

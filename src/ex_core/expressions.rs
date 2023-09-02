@@ -193,10 +193,10 @@ impl Expression for FunctionCallExpression {
 
 #[derive(Clone)]
 pub struct ForExpression {
-    var_name : String,
-    l_bound: Box<dyn Expression>,
-    r_bound: Box<dyn Expression>,
-    body_exprs: Vec<Box<dyn Expression>>
+    pub var_name : String,
+    pub l_bound: Box<dyn Expression>,
+    pub r_bound: Box<dyn Expression>,
+    pub body_exprs: Vec<Box<dyn Expression>>
 }
 impl ForExpression {
     pub fn new(var_name: String, l_bound: Box<dyn Expression>, r_bound: Box<dyn Expression>, body_exprs: Vec<Box<dyn Expression>>) -> Self {
