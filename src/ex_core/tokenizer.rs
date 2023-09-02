@@ -44,6 +44,7 @@ pub enum Token {
     Exec,
     Fn,
     Return,
+    While,
     If,
     Else,
     NewLine, 
@@ -90,6 +91,7 @@ pub enum Token {
             Token::LessEq => write!(f, "LESS EQ TOKEN"),
             Token::If => write!(f, "IF TOKEN"),
             Token::Else => write!(f, "ELSE TOKEN"),
+            Token::While => write!(f, "WHILE TOKEN"),
         }
     }
 }
@@ -196,7 +198,9 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
         return Some(Token::Var);
     } else if try_read_reserved_word("fn", source) {
         return Some(Token::Fn);
-    }  else if try_read_reserved_word("if", source) {
+    } else if try_read_reserved_word("while", source) {
+        return Some(Token::While);
+    } else if try_read_reserved_word("if", source) {
         return Some(Token::If);
     }  else if try_read_reserved_word("else", source) {
         return Some(Token::Else);
@@ -222,9 +226,12 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
 
 fn try_read_reserved_word(reserved: &str, source: &mut String) -> bool {
     let reserved_with_space = reserved.to_owned() + " ";
-    let reserved_with_brace = reserved.to_owned() + ")";
-    
-    if source == reserved || source.starts_with(&reserved_with_space) || source.starts_with(&reserved_with_brace) {
+    let reserved_with_open_brace = reserved.to_owned() + "(";
+    let reserved_with_close_brace = reserved.to_owned() + ")";
+    if source == reserved 
+    || source.starts_with(&reserved_with_space) 
+    || source.starts_with(&reserved_with_open_brace) 
+    || source.starts_with(&reserved_with_close_brace) {
         source.replace_range(..reserved.len(), "");
         return true;
     }
@@ -293,7 +300,8 @@ mod tests {
                                             var boo3 = 1 <= 2 \n\
                                             var boo4 = 1 < 2 \n\
                                             if (boo4 == true) doSomething()\n\
-                                            else doNothing()\n");
+                                            else doNothing()\n\
+                                            while(true) tododo() \n");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -395,6 +403,14 @@ mod tests {
             Token::CloseBrace,
             Token::NewLine,
 
+            Token::While,
+            Token::OpenBrace,
+            Token::True,
+            Token::CloseBrace,
+            Token::Name(String::from("tododo")),
+            Token::OpenBrace,
+            Token::CloseBrace,
+            Token::NewLine,
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
