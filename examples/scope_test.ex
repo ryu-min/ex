@@ -1,4 +1,4 @@
-var a = 2
+a = 2
 fn foo(a) {
     write("a in function ", a)
 } 
