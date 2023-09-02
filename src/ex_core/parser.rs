@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression};
+use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression, WhileExpression};
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -60,6 +60,8 @@ impl Parser {
                     return self.function_call_statement();        
             } else if self.current_token_is(Token::Fn) {
                 return self.function_def_statement();
+            } else if self.current_token_is(Token::While) {
+                return self.while_statement();
             } else if self.current_token_is(Token::If) {
                 return self.if_statement();
             } else if self.current_token_is(Token::NewLine) {
@@ -87,6 +89,13 @@ impl Parser {
         self.skip_new_lines();
         self.eat(Token::CloseCurlyBrace)?;
         Ok(result)
+    }
+
+    fn while_statement(&mut self) -> ParseResult {
+        self.eat(Token::While)?;
+        let while_expr = self.expression()?;
+        let true_exprs = self.parse_statements_in_curly_braces()?;
+        return Ok(Box::new(WhileExpression::new(while_expr, true_exprs)));
     }
 
     fn if_statement(&mut self) -> ParseResult {

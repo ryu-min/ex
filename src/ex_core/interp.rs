@@ -333,12 +333,58 @@ impl ExpressionVisitor for Interpreter {
         }
     }
 
+    fn visit_if_expression(&mut self, expr: &super::IfExpression) ->ExpressionVisitResult {
+        expr.if_expr.accept(self)?;
+        if let Some(value) = self.values_stack.pop() {
+            match value {
+                ValueVariant::Bool(b) => {
+                    if b {
+                        for expr in expr.true_expression.iter() {
+                            expr.accept(self)?;
+                        } 
+                    } else {
+                        for expr in expr.false_expression.iter() {
+                            expr.accept(self)?;
+                        }   
+                    }
+                }
+                _ => {
+                    return Err("not expected result in if".to_string());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    
+    fn visit_while_expression(&mut self, expr: &super::WhileExpression) -> ExpressionVisitResult {
+        loop {
+            expr.while_expr.accept(self)?;
+            if let Some(value) = self.values_stack.pop() {
+                match value {
+                    ValueVariant::Bool(b) => {
+                        if b {
+                            for expr in expr.true_exprs.iter() {
+                                expr.accept(self)?;
+                            } 
+                        } else {
+                            break;
+                        }
+                    }
+                    _ => {
+                        return Err("not expected result in while".to_string());
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn visit_function_def_expression(&mut self, expr: &crate::ex_core::expressions::FunctionDefExpression) -> ExpressionVisitResult {
         self.user_funcs.insert(expr.name.clone(), expr.clone());
         return Ok(());
     }
 
-    
     fn visit_function_call_expression(&mut self,  expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
         if self.std_funcs.contains_key(&expr.name) {
             return self.call_std_func(expr);
@@ -356,29 +402,6 @@ impl ExpressionVisitor for Interpreter {
     fn visit_statement_list_expression(&mut self, expr: &crate::ex_core::expressions::StatementListExpression) -> ExpressionVisitResult {
         for statement in expr.statement_list.iter() {
             statement.accept(self)?;
-        }
-        Ok(())
-    }
-
-    fn visit_if_expression(&mut self, expr: &super::IfExpression) ->ExpressionVisitResult {
-        expr.if_expr.accept(self)?;
-        if let Some(value) = self.values_stack.last() {
-            match value {
-                ValueVariant::Bool(b) => {
-                    if *b {
-                        for expr in expr.true_expression.iter() {
-                            expr.accept(self)?;
-                        } 
-                    } else {
-                        for expr in expr.false_expression.iter() {
-                            expr.accept(self)?;
-                        }   
-                    }
-                }
-                _ => {
-                    return Err("not expected result in if".to_string());
-                }
-            }
         }
         Ok(())
     }

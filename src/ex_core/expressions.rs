@@ -14,6 +14,7 @@ pub trait ExpressionVisitor {
     fn visit_binary_expression(&mut self, expr: &BinaryExpression) -> ExpressionVisitResult;
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
     fn visit_if_expression(&mut self, expr: &IfExpression) ->ExpressionVisitResult;
+    fn visit_while_expression(&mut self, expr: &WhileExpression) -> ExpressionVisitResult;
     fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
     fn visit_return_expression(&mut self, expr: &ReturnExpression) -> ExpressionVisitResult;
@@ -189,6 +190,24 @@ impl Expression for FunctionCallExpression {
     }
 }
 
+#[derive(Clone)]
+pub struct WhileExpression {
+    pub while_expr : Box<dyn Expression>,
+    pub true_exprs : Vec<Box<dyn Expression>>,
+}
+impl WhileExpression {
+    pub fn new(while_expt: Box<dyn Expression>, true_exprs : Vec<Box<dyn Expression>>) -> Self {
+        WhileExpression {
+            while_expr : while_expt,
+            true_exprs : true_exprs
+        }
+    }
+}
+impl Expression for WhileExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_while_expression(self)
+    }
+}
 
 #[derive(Clone)]
 pub struct IfExpression {
