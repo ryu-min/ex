@@ -15,6 +15,7 @@ pub trait ExpressionVisitor {
     fn visit_assignment_expression(&mut self, expr: &AssignmentExpression) -> ExpressionVisitResult;
     fn visit_if_expression(&mut self, expr: &IfExpression) ->ExpressionVisitResult;
     fn visit_while_expression(&mut self, expr: &WhileExpression) -> ExpressionVisitResult;
+    fn visit_for_expression(&mut self, expr: &ForExpression) -> ExpressionVisitResult;
     fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
     fn visit_return_expression(&mut self, expr: &ReturnExpression) -> ExpressionVisitResult;
@@ -187,6 +188,29 @@ impl FunctionCallExpression {
 impl Expression for FunctionCallExpression {
     fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
         visitor.visit_function_call_expression(self)
+    }
+}
+
+#[derive(Clone)]
+pub struct ForExpression {
+    var_name : String,
+    l_bound: Box<dyn Expression>,
+    r_bound: Box<dyn Expression>,
+    body_exprs: Vec<Box<dyn Expression>>
+}
+impl ForExpression {
+    pub fn new(var_name: String, l_bound: Box<dyn Expression>, r_bound: Box<dyn Expression>, body_exprs: Vec<Box<dyn Expression>>) -> Self {
+        ForExpression {
+            var_name : var_name,
+            l_bound : l_bound,
+            r_bound : r_bound,
+            body_exprs : body_exprs
+        }
+    }
+}
+impl Expression for ForExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_for_expression(self)
     }
 }
 

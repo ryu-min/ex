@@ -33,10 +33,12 @@ pub enum Token {
     Minus,
     Multi,
     Devide,
-    OpenBrace,
-    CloseBrace,
-    OpenCurlyBrace,
-    CloseCurlyBrace,
+    OpenBracket,
+    CloseBrackets,
+    OpenCurlyBracket,
+    CloseCurlyBraket,
+    OpenSquareBracket,
+    CloseSquareBracket,
     StringLiteral(String),
     Name(String),
     IntLiteral(i64),
@@ -45,6 +47,8 @@ pub enum Token {
     Fn,
     Return,
     While,
+    For,
+    In,
     If,
     Else,
     NewLine, 
@@ -69,10 +73,10 @@ pub enum Token {
             Token::IntLiteral(n) => write!(f, "INT LITERAL TOKEN WITH VALUE: {}", n),
             Token::FloatLiteral(n) => write!(f, "FLOAT LITERAL WITH VALUE: {}", n),
             Token::Exec => write!(f, "EXEC TOKEN"),
-            Token::OpenBrace => write!(f, "OPEN BRACE TOKEN"),
-            Token::CloseBrace => write!(f, "CLOSE BRACE TOKEN"),
-            Token::OpenCurlyBrace => write!(f, "OPEN CURLY BRACE TOKEN"),
-            Token::CloseCurlyBrace => write!(f, "CLOSE CURLY BRACE TOKEN"),
+            Token::OpenBracket => write!(f, "OPEN BRACE TOKEN"),
+            Token::CloseBrackets => write!(f, "CLOSE BRACE TOKEN"),
+            Token::OpenCurlyBracket => write!(f, "OPEN CURLY BRACE TOKEN"),
+            Token::CloseCurlyBraket => write!(f, "CLOSE CURLY BRACE TOKEN"),
             Token::Plus => write!(f, "PLUS TOKEN"),
             Token::Minus => write!(f, "MINUS TOKEN"),
             Token::Multi => write!(f, "MULTI TOKEN"),
@@ -92,6 +96,10 @@ pub enum Token {
             Token::If => write!(f, "IF TOKEN"),
             Token::Else => write!(f, "ELSE TOKEN"),
             Token::While => write!(f, "WHILE TOKEN"),
+            Token::For => write!(f, "FOR TOKEN"),
+            Token::OpenSquareBracket => write!(f, "OPEN SQUARE BRACKET TOKEN"),
+            Token::CloseSquareBracket => write!(f, "CLOSE SQUARE BRACKET TOKEN"),
+            Token::In => write!(f, "IN TOKEN"),
         }
     }
 }
@@ -99,10 +107,12 @@ pub enum Token {
 fn char_to_simple_token(ch : char) -> Option<Token> {
     match ch {
         '.' =>      Some(Token::Dot),
-        '(' =>      Some(Token::OpenBrace),
-        ')' =>      Some(Token::CloseBrace),
-        '{' =>      Some(Token::OpenCurlyBrace),
-        '}' =>      Some(Token::CloseCurlyBrace),
+        '(' =>      Some(Token::OpenBracket),
+        ')' =>      Some(Token::CloseBrackets),
+        '{' =>      Some(Token::OpenCurlyBracket),
+        '}' =>      Some(Token::CloseCurlyBraket),
+        '[' =>      Some(Token::OpenSquareBracket),
+        ']' =>      Some(Token::CloseSquareBracket),
         '+' =>      Some(Token::Plus),
         '-' =>      Some(Token::Minus),
         '/' =>      Some(Token::Devide),
@@ -200,6 +210,10 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
         return Some(Token::Fn);
     } else if try_read_reserved_word("while", source) {
         return Some(Token::While);
+    } else if try_read_reserved_word("for", source) {
+        return Some(Token::For);
+    }  else if try_read_reserved_word("in", source) {
+        return Some(Token::In);
     } else if try_read_reserved_word("if", source) {
         return Some(Token::If);
     }  else if try_read_reserved_word("else", source) {
@@ -226,18 +240,24 @@ fn read_reserved_token(source: &mut String) -> Option<Token> {
 
 fn try_read_reserved_word(reserved: &str, source: &mut String) -> bool {
     let reserved_with_space = reserved.to_owned() + " ";
+    
     let reserved_with_open_brace = reserved.to_owned() + "(";
     let reserved_with_close_brace = reserved.to_owned() + ")";
+
+    let reserved_with_open_square_brace = reserved.to_owned() + "[";
+    let reserved_with_close_square_brace = reserved.to_owned() + "]";
+
     if source == reserved 
     || source.starts_with(&reserved_with_space) 
     || source.starts_with(&reserved_with_open_brace) 
-    || source.starts_with(&reserved_with_close_brace) {
+    || source.starts_with(&reserved_with_close_brace) 
+    || source.starts_with(&reserved_with_open_square_brace) 
+    || source.starts_with(&reserved_with_close_square_brace) {
         source.replace_range(..reserved.len(), "");
         return true;
     }
     return false;
 } 
-
 
 fn read_name_token(source: &mut String) -> Option<Token> {
     let mut result = String::new();
@@ -301,7 +321,8 @@ mod tests {
                                             var boo4 = 1 < 2 \n\
                                             if (boo4 == true) doSomething()\n\
                                             else doNothing()\n\
-                                            while(true) tododo() \n");
+                                            while(true) tododo() \n\
+                                            for i in [2, 44] topudo() \n");
         let expected_tokens = vec![
             Token::Var,
             Token::Name(String::from("x")),
@@ -325,11 +346,11 @@ mod tests {
             Token::Assignment,
             Token::Name(String::from("x")),
             Token::Multi,
-            Token::OpenBrace,
+            Token::OpenBracket,
             Token::Name(String::from("x")),
             Token::Plus,
             Token::Name(String::from("y")),
-            Token::CloseBrace,
+            Token::CloseBrackets,
             Token::NewLine,
 
             Token::Var,
@@ -387,29 +408,42 @@ mod tests {
             Token::NewLine,   
 
             Token::If,
-            Token::OpenBrace,
+            Token::OpenBracket,
             Token::Name(String::from("boo4")),
             Token::Eq,
             Token::True,
-            Token::CloseBrace,
+            Token::CloseBrackets,
             Token::Name(String::from("doSomething")),
-            Token::OpenBrace,
-            Token::CloseBrace,
+            Token::OpenBracket,
+            Token::CloseBrackets,
             Token::NewLine,
  
             Token::Else,
             Token::Name(String::from("doNothing")),
-            Token::OpenBrace,
-            Token::CloseBrace,
+            Token::OpenBracket,
+            Token::CloseBrackets,
             Token::NewLine,
 
             Token::While,
-            Token::OpenBrace,
+            Token::OpenBracket,
             Token::True,
-            Token::CloseBrace,
+            Token::CloseBrackets,
             Token::Name(String::from("tododo")),
-            Token::OpenBrace,
-            Token::CloseBrace,
+            Token::OpenBracket,
+            Token::CloseBrackets,
+            Token::NewLine,
+
+            Token::For,
+            Token::Name(String::from("i")),
+            Token::In,
+            Token::OpenSquareBracket,
+            Token::IntLiteral(2),
+            Token::Comma,
+            Token::IntLiteral(44),
+            Token::CloseSquareBracket,
+            Token::Name(String::from("topudo")),
+            Token::OpenBracket,
+            Token::CloseBrackets,
             Token::NewLine,
         ];
         let tokens = tokenize(&program);

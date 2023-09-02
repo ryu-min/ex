@@ -406,6 +406,10 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_for_expression(&mut self, expr: &super::ForExpression) -> ExpressionVisitResult {
+        todo!()
+    }
+
 }
 
 
