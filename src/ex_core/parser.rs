@@ -53,7 +53,8 @@ impl Parser {
     /// {assignment_statement} | {function call} | {function def} | {return_expr} | {expr}
     fn statement(&mut self) -> ParseResult {
         if let Some(_) = self.peek_current_token() {
-            if self.current_token_is(Token::Var) {
+            if self.current_token_is(Token::Name("".to_string())) && 
+               self.nth_token_is(1, Token::Assignment) {
                 return self.assignment_statement();
             } else if self.current_token_is(Token::Name("".to_string())) && 
                       self.nth_token_is(1, Token::OpenBrace) {
@@ -113,7 +114,6 @@ impl Parser {
     /// 'assignment_statement' function match next syntax pattern:
     /// let NAME = {expr}
     fn assignment_statement(&mut self) -> ParseResult {
-        self.eat(Token::Var)?;
         if let Some(name_token) = self.peek_current_token() {
             match name_token {
                 Token::Name(name) => {

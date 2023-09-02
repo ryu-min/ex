@@ -414,14 +414,14 @@ mod tests {
     #[test]
     fn iterp_test() {
         let mut test_map: std::collections::HashMap<&str, _> = std::collections::HashMap::new();
-        test_map.insert("var a = 2 + 2", super::ValueVariant::Integer(4));
-        test_map.insert("var a  =   (2 + 2) * 2", super::ValueVariant::Integer(8));
-        test_map.insert("var a  = 2 + 2 * 2 * 2", super::ValueVariant::Integer(10));
-        test_map.insert("var b  = 0 - 3 \n\
-                           var a = b - 1", super::ValueVariant::Integer(-4));
-        test_map.insert("var a  = \"aa\" + \"bb\"", super::ValueVariant::String(String::from("aabb")));
-        test_map.insert("var b  = \"aa\" \n\
-                           var a = b + \"bb\" ", super::ValueVariant::String(String::from("aabb")));
+        test_map.insert("a = 2 + 2", super::ValueVariant::Integer(4));
+        test_map.insert("a  =   (2 + 2) * 2", super::ValueVariant::Integer(8));
+        test_map.insert("a  = 2 + 2 * 2 * 2", super::ValueVariant::Integer(10));
+        test_map.insert("b  = 0 - 3 \n\
+                           a = b - 1", super::ValueVariant::Integer(-4));
+        test_map.insert("a  = \"aa\" + \"bb\"", super::ValueVariant::String(String::from("aabb")));
+        test_map.insert("b  = \"aa\" \n\
+                           a = b + \"bb\" ", super::ValueVariant::String(String::from("aabb")));
         for (prog, exp_res) in test_map.iter() {
             let prog = prog.to_string();
             let expr = crate::ex_core::parser::Parser::new(&crate::ex_core::tokenize(&prog)).parse().unwrap();
