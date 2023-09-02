@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression, BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression};
+use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression};
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -76,27 +76,27 @@ impl Parser {
         }
     }
 
-    fn if_statement(&mut self) -> ParseResult {
-        self.eat(Token::If)?;
-        let if_expr = self.expression()?;
+    fn parse_statements_in_curly_braces(&mut self) -> Result<Vec<Box<dyn Expression>>,String> {
+        let mut result : Vec<Box<dyn Expression>> = Vec::new();
         self.eat(Token::OpenCurlyBrace)?;
-        let mut true_expressions: Vec<Box<dyn Expression>> = Vec::new();
+        self.skip_new_lines();
         while !self.current_token_is(Token::CloseCurlyBrace) {
-            true_expressions.push( self.statement()?);
+            result.push(self.statement()?); 
             self.skip_new_lines();
         }
         self.skip_new_lines();
-        self.advance();
+        self.eat(Token::CloseCurlyBrace)?;
+        Ok(result)
+    }
+
+    fn if_statement(&mut self) -> ParseResult {
+        self.eat(Token::If)?;
+        let if_expr = self.expression()?;
+        let true_expressions = self.parse_statements_in_curly_braces()?;
         let mut false_expressions: Vec<Box<dyn Expression>> = Vec::new();
         if self.current_token_is(Token::Else) {
             self.eat(Token::Else)?;
-            self.eat(Token::OpenCurlyBrace)?;
-            while !self.current_token_is(Token::CloseCurlyBrace) {
-                false_expressions.push( self.statement()?);
-                self.skip_new_lines();
-            }
-            self.skip_new_lines();
-            self.advance();   
+            false_expressions = self.parse_statements_in_curly_braces()?;
         }
         return Ok(Box::new(IfExpression::new(if_expr, true_expressions, false_expressions)));
     }
@@ -129,32 +129,23 @@ impl Parser {
     /// 'function_call_statement' function match next syntax pattern:
     /// f_name ([expt,]*)
     fn function_call_statement(&mut self) -> ParseResult {
-
-        let f_name = self.read_name()?;
-        let f_args = self.read_func_call_args()?;
+        let f_name = self.parse_name()?;
+        let f_args = self.parse_func_call_args()?;
         return Ok(Box::new(FunctionCallExpression::new(f_name, f_args)));
     }
 
     fn function_def_statement(&mut self) -> ParseResult {
         self.eat(Token::Fn)?;
-        let f_name = self.read_name()?;
-        let f_args = self.read_func_def_args()?;
-        let mut f_body : Vec<Box<dyn Expression>> = Vec::new();
-        self.eat(Token::OpenCurlyBrace)?;
-                    self.skip_new_lines();
-        while !self.current_token_is(Token::CloseCurlyBrace) {
-            f_body.push(self.statement()?); 
-            self.skip_new_lines();
-        }
-        self.skip_new_lines();
-        self.eat(Token::CloseCurlyBrace)?;
+        let f_name = self.parse_name()?;
+        let f_args = self.parse_func_def_args()?;
+        let f_body = self.parse_statements_in_curly_braces()?;
         return Ok(Box::new(FunctionDefExpression::new(f_name, f_args, f_body)));
     }
 
     fn expression(&mut self) -> ParseResult {
         return self.equality();
     }
-
+    
     fn equality(&mut self) -> ParseResult {
         let mut result = self.compression()?;
         loop {
@@ -193,8 +184,6 @@ impl Parser {
         return Ok(result);
     }
            
-    
-
 
     /// 'expr' function match next syntax pattern:
     /// {term} [[PLUS|MINUS] {term}]*
@@ -299,14 +288,6 @@ impl Parser {
         }
     }
 
-
-
-
-
-
-
-
-
     fn advance(&mut self) {
         self.pos += 1;
     }
@@ -350,7 +331,7 @@ impl Parser {
         }
     }
 
-    fn read_name(&mut self) -> Result<String, String> {
+    fn parse_name(&mut self) -> Result<String, String> {
         if let Some(name_token) = self.peek_current_token() {
             match name_token {
                 Token::Name(n) => {
@@ -366,7 +347,7 @@ impl Parser {
         }
     }
 
-    fn read_func_def_args(&mut self) -> Result<Vec<String>, String> {
+    fn parse_func_def_args(&mut self) -> Result<Vec<String>, String> {
         self.eat(Token::OpenBrace)?;
         let mut f_args : Vec<String> = Vec::new();
         loop {
@@ -392,7 +373,7 @@ impl Parser {
         Ok(f_args)
     } 
 
-    fn read_func_call_args(&mut self) -> Result<Vec<Box<dyn Expression>>, String> {
+    fn parse_func_call_args(&mut self) -> Result<Vec<Box<dyn Expression>>, String> {
         self.eat(Token::OpenBrace)?;
         let mut f_args : Vec<Box<dyn Expression>> = Vec::new();
         loop {
