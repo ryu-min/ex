@@ -1,6 +1,8 @@
 i = 10
+write("i = ", i)
+writeln("run while untill i > 0")
 while (i > 0) {
-    writeln("in while state")
+    write("in while i == ", i)
     i = i - 1
 }
-writeln("outside while")
+writeln("while finished")
