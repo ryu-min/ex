@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io};
+use std::{collections::HashMap, io::{self, Write}};
 use crate::ex_core::ValueVariant;
 
 use super::func_respository::{FunctionRepository, StdFuncResult, StdFuncArgs, StdFuncMap, StdFunc};
@@ -21,9 +21,7 @@ impl IOFunctionRepo {
         for arg in args.iter() {
             print!("{}", arg.to_string());
         }
-        if args.len() != 0 {
-            println!();
-        }
+        io::stdout().flush().expect("Failed to flush stdout");
         return Ok(None);
     }
     
