@@ -287,7 +287,7 @@ impl Parser {
             Token::OpenBracket => {
                 self.advance();
                 let result = self.expression()?;
-                self.eat(Token::CloseBrackets)?;
+                self.eat(Token::CloseBracket)?;
                 return Ok(result); 
             }
             Token::Name(n) => {
@@ -377,7 +377,7 @@ impl Parser {
         loop {
             if let Some(current_token) = self.peek_current_token() {
                 match current_token {
-                    Token::CloseBrackets => {
+                    Token::CloseBracket => {
                         break;
                     }
                     Token::Comma => {
@@ -393,7 +393,7 @@ impl Parser {
                 }
             }
         }
-        self.eat(Token::CloseBrackets)?;
+        self.eat(Token::CloseBracket)?;
         Ok(f_args)
     } 
 
@@ -403,7 +403,7 @@ impl Parser {
         loop {
             if let Some(current_token) = self.peek_current_token() {
                 match current_token {
-                    Token::CloseBrackets => {
+                    Token::CloseBracket => {
                         break;
                     }
                     Token::Comma => {
@@ -416,7 +416,7 @@ impl Parser {
                 }
             }
         }
-        self.eat(Token::CloseBrackets)?;
+        self.eat(Token::CloseBracket)?;
         Ok(f_args)
     }
 

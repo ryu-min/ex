@@ -34,7 +34,7 @@ pub enum Token {
     Multi,
     Devide,
     OpenBracket,
-    CloseBrackets,
+    CloseBracket,
     OpenCurlyBracket,
     CloseCurlyBraket,
     OpenSquareBracket,
@@ -74,7 +74,7 @@ pub enum Token {
             Token::FloatLiteral(n) => write!(f, "FLOAT LITERAL WITH VALUE: {}", n),
             Token::Exec => write!(f, "EXEC TOKEN"),
             Token::OpenBracket => write!(f, "OPEN BRACE TOKEN"),
-            Token::CloseBrackets => write!(f, "CLOSE BRACE TOKEN"),
+            Token::CloseBracket => write!(f, "CLOSE BRACE TOKEN"),
             Token::OpenCurlyBracket => write!(f, "OPEN CURLY BRACE TOKEN"),
             Token::CloseCurlyBraket => write!(f, "CLOSE CURLY BRACE TOKEN"),
             Token::Plus => write!(f, "PLUS TOKEN"),
@@ -108,7 +108,7 @@ fn char_to_simple_token(ch : char) -> Option<Token> {
     match ch {
         '.' =>      Some(Token::Dot),
         '(' =>      Some(Token::OpenBracket),
-        ')' =>      Some(Token::CloseBrackets),
+        ')' =>      Some(Token::CloseBracket),
         '{' =>      Some(Token::OpenCurlyBracket),
         '}' =>      Some(Token::CloseCurlyBraket),
         '[' =>      Some(Token::OpenSquareBracket),
@@ -259,10 +259,11 @@ fn try_read_reserved_word(reserved: &str, source: &mut String) -> bool {
     return false;
 } 
 
+// TODO: think about reading everything untill escape symbol??
 fn read_name_token(source: &mut String) -> Option<Token> {
     let mut result = String::new();
     for ch in source.chars() {
-        if ch.is_alphanumeric() {
+        if ch.is_alphanumeric() || ch == '_' {
             result.push(ch);
         } else {
             break;
@@ -350,7 +351,7 @@ mod tests {
             Token::Name(String::from("x")),
             Token::Plus,
             Token::Name(String::from("y")),
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::NewLine,
 
             Token::Var,
@@ -412,25 +413,25 @@ mod tests {
             Token::Name(String::from("boo4")),
             Token::Eq,
             Token::True,
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::Name(String::from("doSomething")),
             Token::OpenBracket,
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::NewLine,
  
             Token::Else,
             Token::Name(String::from("doNothing")),
             Token::OpenBracket,
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::NewLine,
 
             Token::While,
             Token::OpenBracket,
             Token::True,
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::Name(String::from("tododo")),
             Token::OpenBracket,
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::NewLine,
 
             Token::For,
@@ -443,7 +444,7 @@ mod tests {
             Token::CloseSquareBracket,
             Token::Name(String::from("topudo")),
             Token::OpenBracket,
-            Token::CloseBrackets,
+            Token::CloseBracket,
             Token::NewLine,
         ];
         let tokens = tokenize(&program);
@@ -465,6 +466,22 @@ mod tests {
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
+    }
+
+    #[test]
+    fn var_name_test() {
+        let program: String = String::from("to_guess = read(\"Enter your number to guess:\")");
+        let expected_tokens = vec![
+            Token::Name(String::from("to_guess")),
+            Token::Assignment,
+            Token::Name(String::from("read")),
+            Token::OpenBracket,
+            Token::StringLiteral(String::from("Enter your number to guess:")),
+            Token::CloseBracket,
+            Token::NewLine,
+        ];
+        let tokens = tokenize(&program);
+        assert_eq!(tokens, expected_tokens);  
     }
 
 
