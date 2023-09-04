@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression, WhileExpression, ForExpression};
+use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression, WhileExpression, ForExpression, MethodCallExpression};
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -59,6 +59,9 @@ impl Parser {
             } else if self.current_token_is(Token::Name("".to_string())) && 
                       self.nth_token_is(1, Token::OpenBracket) {
                     return self.function_call_statement();        
+            } else if self.current_token_is(Token::Name("".to_string())) && 
+                      self.nth_token_is(1, Token::Dot) {
+                    return self.method_call_statement();        
             } else if self.current_token_is(Token::Fn) {
                 return self.function_def_statement();
             } else if self.current_token_is(Token::While) {
@@ -164,6 +167,14 @@ impl Parser {
         let f_args = self.parse_func_def_args()?;
         let f_body = self.parse_statements_in_curly_braces()?;
         return Ok(Box::new(FunctionDefExpression::new(f_name, f_args, f_body)));
+    }
+
+    fn method_call_statement(&mut self) -> ParseResult {
+        let self_name = self.parse_name()?;
+        self.eat(Token::Dot)?;
+        let method_name = self.parse_name()?;
+        let args = self.parse_func_call_args()?;
+        return Ok(Box::new(MethodCallExpression::new(self_name, method_name, args)));
     }
 
     fn expression(&mut self) -> ParseResult {

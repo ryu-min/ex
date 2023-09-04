@@ -469,6 +469,27 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_method_call_expression(&mut self, expr: &super::MethodCallExpression) -> ExpressionVisitResult {
+        println!("hey i in visit method");
+        println!("self name is {}", expr.self_name);
+        for arg_expr in expr.args.iter() {
+            arg_expr.accept(self)?;
+        }
+        let arg_count = &expr.args.len();
+        let mut args : Vec<ValueVariant> = Vec::new();
+        for _ in 0..*arg_count {
+            if let Some(value) = self.values_stack.pop() {
+                args.insert(0, value);
+            } else {
+                return Err(String::from("exptected value in stack"));
+            }
+        }
+        for arg in args.iter() {
+            println!("{}", arg.to_string());
+        }
+        return Ok(());
+    }
+
 }
 
 

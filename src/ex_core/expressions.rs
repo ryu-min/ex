@@ -18,6 +18,7 @@ pub trait ExpressionVisitor {
     fn visit_for_expression(&mut self, expr: &ForExpression) -> ExpressionVisitResult;
     fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
+    fn visit_method_call_expression(&mut self, expr: &MethodCallExpression) -> ExpressionVisitResult;
     fn visit_return_expression(&mut self, expr: &ReturnExpression) -> ExpressionVisitResult;
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
 }
@@ -190,6 +191,24 @@ impl Expression for FunctionCallExpression {
         visitor.visit_function_call_expression(self)
     }
 }
+
+#[derive(Clone)]
+pub struct MethodCallExpression {
+    pub self_name: String,
+    pub method_name: String,
+    pub args: Vec<Box<dyn Expression>>
+}
+impl MethodCallExpression {
+    pub fn new(self_name: String, method_name: String, args: Vec<Box<dyn Expression>>) -> Self {
+        MethodCallExpression { self_name: self_name, method_name : method_name, args: args }
+    }
+}
+impl Expression for MethodCallExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_method_call_expression(self)
+    }
+}
+
 
 #[derive(Clone)]
 pub struct ForExpression {

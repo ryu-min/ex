@@ -319,7 +319,8 @@ mod tests {
                                             if (boo4 == true) doSomething()\n\
                                             else doNothing()\n\
                                             while(true) tododo() \n\
-                                            for i in [2, 44] topudo() \n");
+                                            for i in [2, 44] topudo() \n\
+                                            a = b.to_int()\n");
         let expected_tokens = vec![
             Token::Name(String::from("x")),
             Token::Assignment,
@@ -432,6 +433,15 @@ mod tests {
             Token::OpenBracket,
             Token::CloseBracket,
             Token::NewLine,
+
+            Token::Name(String::from("a")),
+            Token::Assignment,
+            Token::Name(String::from("b")),
+            Token::Dot,
+            Token::Name(String::from("to_int")),
+            Token::OpenBracket,
+            Token::CloseBracket,
+            Token::NewLine
         ];
         let tokens = tokenize(&program);
         assert_eq!(tokens, expected_tokens);
