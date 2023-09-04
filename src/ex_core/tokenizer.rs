@@ -25,7 +25,6 @@ pub fn tokenize(program: &String) -> Vec<Token> {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Token {
-    Var,
     Dot,
     Comma,
     Assignment,
@@ -65,7 +64,6 @@ pub enum Token {
  impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Token::Var => write!(f, "VAR TOKEN"),
             Token::Dot => write!(f, "DOT TOKEN"),
             Token::Comma => write!(f, "COMMA TOKEN"),
             Token::Assignment => write!(f, "ASSIGNMENT TOKEN"),
@@ -204,9 +202,7 @@ fn read_number_token(source: &mut String) -> Option<Token> {
 
 
 fn read_reserved_token(source: &mut String) -> Option<Token> { 
-    if try_read_reserved_word("var", source) {
-        return Some(Token::Var);
-    } else if try_read_reserved_word("fn", source) {
+    if try_read_reserved_word("fn", source) {
         return Some(Token::Fn);
     } else if try_read_reserved_word("while", source) {
         return Some(Token::While);
@@ -309,35 +305,32 @@ mod tests {
 
     #[test]
     fn tokenizer_test() {
-        let program: String = String::from("var x = 10 \n\
-                                            var y = 20.5 \n\
-                                            var s = \"str\" \\
+        let program: String = String::from("x = 10 \n\
+                                            y = 20.5 \n\
+                                            s = \"str\" \\
                                             x = x * ( x + y ) \\
-                                            var a = true \n\
-                                            var c = a == true\n\
-                                            var bu = c != false \n\
-                                            var boo1 = 1 >= 2 \n\
-                                            var boo2 = 1 > 2 \n\
-                                            var boo3 = 1 <= 2 \n\
-                                            var boo4 = 1 < 2 \n\
+                                            a = true \n\
+                                            c = a == true\n\
+                                            bu = c != false \n\
+                                            boo1 = 1 >= 2 \n\
+                                            boo2 = 1 > 2 \n\
+                                            boo3 = 1 <= 2 \n\
+                                            boo4 = 1 < 2 \n\
                                             if (boo4 == true) doSomething()\n\
                                             else doNothing()\n\
                                             while(true) tododo() \n\
                                             for i in [2, 44] topudo() \n");
         let expected_tokens = vec![
-            Token::Var,
             Token::Name(String::from("x")),
             Token::Assignment,
             Token::IntLiteral(10),
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("y")),
             Token::Assignment,
             Token::FloatLiteral(20.5),
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("s")),
             Token::Assignment,
             Token::StringLiteral(String::from("str")),
@@ -354,13 +347,11 @@ mod tests {
             Token::CloseBracket,
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("a")),
             Token::Assignment,
             Token::True,
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("c")),
             Token::Assignment,
             Token::Name(String::from("a")),
@@ -368,7 +359,6 @@ mod tests {
             Token::True,
             Token::NewLine,
 
-            Token::Var, 
             Token::Name(String::from("bu")),
             Token::Assignment,
             Token::Name(String::from("c")),
@@ -376,7 +366,6 @@ mod tests {
             Token::False,
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("boo1")),
             Token::Assignment,
             Token::IntLiteral(1),
@@ -384,7 +373,6 @@ mod tests {
             Token::IntLiteral(2),
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("boo2")),
             Token::Assignment,
             Token::IntLiteral(1),
@@ -392,7 +380,6 @@ mod tests {
             Token::IntLiteral(2),
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("boo3")),
             Token::Assignment,
             Token::IntLiteral(1),
@@ -400,7 +387,6 @@ mod tests {
             Token::IntLiteral(2),
             Token::NewLine,
 
-            Token::Var,
             Token::Name(String::from("boo4")),
             Token::Assignment,
             Token::IntLiteral(1),
