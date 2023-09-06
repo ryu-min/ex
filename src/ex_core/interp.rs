@@ -1,8 +1,8 @@
 use core::fmt;
+
+use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap, StdMethodsMap, IntMethods, StdMethodsRepository};
 use std::collections::HashMap;
-
-
-use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap};
+use std::mem::Discriminant;
 
 use super::{expressions::{FunctionDefExpression, Expression, ExpressionVisitResult, ExpressionVisitor}, tokenizer::Token};
 #[derive(Clone, PartialEq, Debug)]
@@ -38,6 +38,7 @@ pub struct Interpreter {
     values_stack: Vec<ValueVariant>,
     var_scopes: Vec<ValueScope>,
     std_funcs: StdFuncMap,
+    std_methods: HashMap<Discriminant<ValueVariant>, StdMethodsMap>,
     user_funcs: UserFuncMap
 }
 type InterpResult = Result<(), String>;
@@ -51,13 +52,23 @@ impl Interpreter {
                 std_fucs.insert(fname, f);
             }
         }
+
+        let mut std_methods : HashMap<Discriminant<ValueVariant>,StdMethodsMap> = HashMap::new();
+        let mut std_methods_repos: Vec<Box<dyn StdMethodsRepository>> = Vec::new();
+        std_methods_repos.push(Box::new(IntMethods::new()));
+        for methods_repo in std_methods_repos.iter() {
+            std_methods.insert(methods_repo.get_diterminant(), methods_repo.get_methods());
+        }
+
+
         let mut var_scopes : Vec<ValueScope> = Vec::new();
-        // value scope
+        // global value scope
         var_scopes.push(ValueScope::new());
         return Interpreter {
             values_stack : vec![], 
             var_scopes: var_scopes,
             std_funcs : std_fucs,
+            std_methods : std_methods,
             user_funcs : HashMap::new()
         };
     } 
@@ -470,22 +481,42 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_method_call_expression(&mut self, expr: &super::MethodCallExpression) -> ExpressionVisitResult {
-        println!("hey i in visit method");
-        println!("self name is {}", expr.self_name);
-        for arg_expr in expr.args.iter() {
-            arg_expr.accept(self)?;
-        }
-        let arg_count = &expr.args.len();
-        let mut args : Vec<ValueVariant> = Vec::new();
-        for _ in 0..*arg_count {
-            if let Some(value) = self.values_stack.pop() {
-                args.insert(0, value);
-            } else {
-                return Err(String::from("exptected value in stack"));
+        if let Some(this_value) = self._get_var(&expr.self_name).cloned() {
+            let discr = std::mem::discriminant(&this_value);
+            if !self.std_methods.contains_key(&discr) {
+                return Err(format!("method for {} not supported", this_value.to_string()));
             }
-        }
-        for arg in args.iter() {
-            println!("{}", arg.to_string());
+            let methods_map = self.std_methods.get(&discr).unwrap().clone();
+            if let Some(f) = methods_map.get(&expr.method_name) {
+                for arg_expr in expr.args.iter() {
+                    arg_expr.accept(self)?;
+                }
+                let arg_count = &expr.args.len();
+                let mut args : Vec<ValueVariant> = Vec::new();
+                for _ in 0..*arg_count {
+                    if let Some(value) = self.values_stack.pop() {
+                        args.insert(0, value);
+                    } else {
+                        return Err(String::from("exptected value in stack"));
+                    }
+                }
+                let f_result = f(&this_value, &args);
+                match f_result {
+                    Ok(f_return_value) => {
+                        if let Some(val) = f_return_value {
+                            self.values_stack.push(val);
+                        }
+                    }
+                    Err(err_msg) => {
+                        return Err(format!("Error with method {} : {}", &expr.method_name, err_msg));                
+                    }
+                }
+            } else {
+                return Err(format!("unknows method {} for {}", expr.method_name, this_value.to_string()));
+            }
+
+        } else {
+            return Err(format!("call method with unknown object '{}'", expr.self_name));
         }
         return Ok(());
     }
