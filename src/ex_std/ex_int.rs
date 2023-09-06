@@ -10,20 +10,32 @@ pub struct IntMethods {
 impl IntMethods {
     pub fn new() -> Self {
         let mut methods = StdMethodsMap::new();
-        methods.insert("test".to_string(), IntMethods::test);
+        methods.insert("pow".to_string(), IntMethods::pow);
         return Self {
             methods : methods
         }
     }
-
-    fn test(me: &ValueVariant, args: &StdMethodArgs) -> StdMethodResult {
-        println!("call test function with this {}", me.to_string());
-        println!("arg count is {}", args.len());
-        for arg in args.iter() {
-            println!("{}",arg.to_string());
+    
+    fn to_int(v: &ValueVariant) -> Result<i64, String> {
+        match v {
+            ValueVariant::Integer(i) => {
+                return Ok(i.clone());
+            }
+            _ => {
+                return Err(format!("exptected int, find {}", v.to_string()));
+            }
         }
-        return Ok(Some(ValueVariant::Integer(69)));
     }
+
+    fn pow(this: &ValueVariant, args:&StdMethodArgs) -> StdMethodResult {
+        if args.len() != 1 {
+            return Err(String::from("method arg expected 1 argument"));
+        }
+        let this_i = Self::to_int(this)?;
+        let pow = Self::to_int(&args[0])?;
+        return Ok(Some(ValueVariant::Integer(this_i.pow(pow as u32))));
+    }
+
 }
 
 impl StdMethodsRepository for IntMethods {
