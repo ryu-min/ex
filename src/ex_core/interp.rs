@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap, StdMethodsMap, IntMethods, StdMethodsRepository};
+use crate::ex_std::{FunctionRepository, IOFunctionRepo, StdFuncMap, StdMethodsMap, IntMethods, StdMethodsRepository, StringMethods};
 use std::collections::HashMap;
 use std::mem::Discriminant;
 
@@ -56,6 +56,8 @@ impl Interpreter {
         let mut std_methods : HashMap<Discriminant<ValueVariant>,StdMethodsMap> = HashMap::new();
         let mut std_methods_repos: Vec<Box<dyn StdMethodsRepository>> = Vec::new();
         std_methods_repos.push(Box::new(IntMethods::new()));
+        std_methods_repos.push(Box::new(StringMethods::new()));
+        
         for methods_repo in std_methods_repos.iter() {
             std_methods.insert(methods_repo.get_diterminant(), methods_repo.get_methods());
         }
