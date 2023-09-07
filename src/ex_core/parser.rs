@@ -1,6 +1,6 @@
 use std::mem;
 
-use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression, WhileExpression, ForExpression, MethodCallExpression};
+use super::{Expression, Token, StatementListExpression, AssignmentExpression, FunctionCallExpression, FunctionDefExpression,   BinaryExpression, IntLiteralExpression, FloatLiteralExpression, StringLiteralExpression, UnaryExpression, NameExpression, BoolLiteralExpression, IfExpression, WhileExpression, ForExpression, MethodCallExpression, AnonymousMethodExpression};
 
 pub type ParseResult = Result<Box<dyn Expression>, String>;
 
@@ -62,6 +62,8 @@ impl Parser {
             } else if self.current_token_is(Token::Name("".to_string())) && 
                       self.nth_token_is(1, Token::Dot) {
                     return self.method_call_statement();        
+            } else if self.current_token_is(Token::Dot) {
+                return self.anonymous_methods_statement();
             } else if self.current_token_is(Token::Fn) {
                 return self.function_def_statement();
             } else if self.current_token_is(Token::While) {
@@ -175,6 +177,13 @@ impl Parser {
         let method_name = self.parse_name()?;
         let args = self.parse_func_call_args()?;
         return Ok(Box::new(MethodCallExpression::new(self_name, method_name, args)));
+    }
+
+    fn anonymous_methods_statement(&mut self) -> ParseResult {
+        self.eat(Token::Dot)?;
+        let method_name = self.parse_name()?;
+        let args = self.parse_func_call_args()?;
+        return Ok(Box::new(AnonymousMethodExpression::new(method_name, args)));
     }
 
     fn expression(&mut self) -> ParseResult {
