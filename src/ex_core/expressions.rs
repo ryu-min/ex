@@ -211,12 +211,13 @@ impl Expression for MethodCallExpression {
 
 #[derive(Clone)]
 pub struct AnonymousMethodExpression {
+    pub self_expr: Box<dyn Expression>,
     pub method_name: String,
     pub args: Vec<Box<dyn Expression>>
 }
 impl AnonymousMethodExpression {
-    pub fn new(method_name: String, args: Vec<Box<dyn Expression>>) -> Self {
-        AnonymousMethodExpression { method_name: method_name, args: args }
+    pub fn new(self_expr: Box<dyn Expression>, method_name: String, args: Vec<Box<dyn Expression>>) -> Self {
+        AnonymousMethodExpression { self_expr: self_expr,  method_name: method_name, args: args }
     }
 }
 impl Expression for AnonymousMethodExpression {

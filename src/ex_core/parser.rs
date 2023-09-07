@@ -56,9 +56,7 @@ impl Parser {
             if self.current_token_is(Token::Name("".to_string())) && 
                self.nth_token_is(1, Token::Assignment) {
                 return self.assignment_statement();
-            } else if self.current_token_is(Token::Dot) {
-                return self.anonymous_methods_statement();
-            } else if self.current_token_is(Token::Name("".to_string())) && 
+            }  else if self.current_token_is(Token::Name("".to_string())) && 
                       self.nth_token_is(1, Token::OpenBracket) {
                 return self.function_call_statement();        
             } else if self.current_token_is(Token::Name("".to_string())) && 
@@ -79,7 +77,12 @@ impl Parser {
                 self.advance();
                 return self.expression();    
             } else {
-                return self.expression();
+                let expr = self.expression();
+                if self.current_token_is(Token::Dot) {
+                    return self.anonymous_methods_statement(expr?);
+                } else {
+                    return expr;
+                }
             }
         } else {
             return Err(String::from("no token for statement"));
@@ -179,11 +182,11 @@ impl Parser {
         return Ok(Box::new(MethodCallExpression::new(self_name, method_name, args)));
     }
 
-    fn anonymous_methods_statement(&mut self) -> ParseResult {
+    fn anonymous_methods_statement(&mut self, this_expr: Box<dyn Expression>) -> ParseResult {
         self.eat(Token::Dot)?;
         let method_name = self.parse_name()?;
         let args = self.parse_func_call_args()?;
-        return Ok(Box::new(AnonymousMethodExpression::new(method_name, args)));
+        return Ok(Box::new(AnonymousMethodExpression::new(this_expr, method_name, args)));
     }
 
     fn expression(&mut self) -> ParseResult {

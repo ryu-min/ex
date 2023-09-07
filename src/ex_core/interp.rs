@@ -509,6 +509,7 @@ impl ExpressionVisitor for Interpreter {
     }
 
     fn visit_anonymous_method_call_expression(&mut self, expr: &super::AnonymousMethodExpression) -> ExpressionVisitResult {
+        expr.self_expr.accept(self)?;
         if let Some(this_value) = self.values_stack.pop() {
             return self.call_method(&this_value, &expr.method_name, &expr.args);
         } else {
