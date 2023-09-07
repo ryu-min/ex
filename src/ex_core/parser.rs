@@ -56,14 +56,14 @@ impl Parser {
             if self.current_token_is(Token::Name("".to_string())) && 
                self.nth_token_is(1, Token::Assignment) {
                 return self.assignment_statement();
-            } else if self.current_token_is(Token::Name("".to_string())) && 
-                      self.nth_token_is(1, Token::OpenBracket) {
-                    return self.function_call_statement();        
-            } else if self.current_token_is(Token::Name("".to_string())) && 
-                      self.nth_token_is(1, Token::Dot) {
-                    return self.method_call_statement();        
             } else if self.current_token_is(Token::Dot) {
                 return self.anonymous_methods_statement();
+            } else if self.current_token_is(Token::Name("".to_string())) && 
+                      self.nth_token_is(1, Token::OpenBracket) {
+                return self.function_call_statement();        
+            } else if self.current_token_is(Token::Name("".to_string())) && 
+                      self.nth_token_is(1, Token::Dot) {
+                return self.method_call_statement();        
             } else if self.current_token_is(Token::Fn) {
                 return self.function_def_statement();
             } else if self.current_token_is(Token::While) {

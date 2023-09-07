@@ -132,18 +132,14 @@ impl Interpreter {
     }
 
     fn call_std_func(&mut self, expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
+            
             let f = self.std_funcs.get(&expr.name).unwrap().clone();
-            let arg_count = &expr.args.len();
             for arg_expr in expr.args.iter() {
                 arg_expr.accept(self)?;
             }
             let mut args : Vec<ValueVariant> = Vec::new();
-            for _ in 0..*arg_count {
-                if let Some(value) = self.values_stack.pop() {
-                    args.insert(0, value);
-                } else {
-                    return Err(String::from("exptected value in stack"));
-                }
+            while let Some(value) = self.values_stack.pop() {
+                args.insert(0, value);
             }
             let f_result = f(&args);
             match f_result {
@@ -181,6 +177,39 @@ impl Interpreter {
         self.var_scopes.pop();
         Ok(())
     }
+
+
+    fn call_method(&mut self, this_value : &ValueVariant, method_name: &String, args: &Vec<Box<dyn Expression>>) -> ExpressionVisitResult {
+        let discr = std::mem::discriminant(this_value);
+        if !self.std_methods.contains_key(&discr) {
+            return Err(format!("method for {} not supported", this_value.to_string()));
+        }
+        let methods_map = self.std_methods.get(&discr).unwrap().clone();
+        if let Some(f) = methods_map.get(method_name) {
+            for arg_expr in args.iter() {
+                arg_expr.accept(self)?;
+            }
+            let mut args : Vec<ValueVariant> = Vec::new();
+            while let Some(value) = self.values_stack.pop() {
+                args.insert(0, value);
+            }
+            let f_result = f(&this_value, &args);
+            match f_result {
+                Ok(f_return_value) => {
+                    if let Some(val) = f_return_value {
+                        self.values_stack.push(val);
+                    }
+                }
+                Err(err_msg) => {
+                    return Err(format!("Error with method {} : {}", &method_name, err_msg));                
+                }
+            }
+        } else {
+            return Err(format!("unknows method {} for {}", method_name, this_value.to_string()));
+        }
+        Ok(())
+    }
+
 }
 
 
@@ -437,32 +466,6 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
-    fn visit_function_def_expression(&mut self, expr: &crate::ex_core::expressions::FunctionDefExpression) -> ExpressionVisitResult {
-        self.user_funcs.insert(expr.name.clone(), expr.clone());
-        return Ok(());
-    }
-
-    fn visit_function_call_expression(&mut self,  expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
-        if self.std_funcs.contains_key(&expr.name) {
-            return self.call_std_func(expr);
-        } else if self.user_funcs.contains_key(&expr.name) {
-            return self.call_user_func(expr);
-        } else {
-            return Err(format!("function {} not defined", &expr.name));
-        }
-    }
-
-    fn visit_return_expression(&mut self, expr: &crate::ex_core::expressions::ReturnExpression) -> ExpressionVisitResult {
-        return expr.expr.accept(self);
-    }
-
-    fn visit_statement_list_expression(&mut self, expr: &crate::ex_core::expressions::StatementListExpression) -> ExpressionVisitResult {
-        for statement in expr.statement_list.iter() {
-            statement.accept(self)?;
-        }
-        Ok(())
-    }
-
     fn visit_for_expression(&mut self, expr: &super::ForExpression) -> ExpressionVisitResult {
         expr.l_bound.accept(self)?;
         expr.r_bound.accept(self)?;
@@ -482,45 +485,46 @@ impl ExpressionVisitor for Interpreter {
         Ok(())
     }
 
+    fn visit_function_def_expression(&mut self, expr: &crate::ex_core::expressions::FunctionDefExpression) -> ExpressionVisitResult {
+        self.user_funcs.insert(expr.name.clone(), expr.clone());
+        return Ok(());
+    }
+
+    fn visit_function_call_expression(&mut self,  expr: &crate::ex_core::expressions::FunctionCallExpression) -> ExpressionVisitResult {
+        if self.std_funcs.contains_key(&expr.name) {
+            return self.call_std_func(expr);
+        } else if self.user_funcs.contains_key(&expr.name) {
+            return self.call_user_func(expr);
+        } else {
+            return Err(format!("function {} not defined", &expr.name));
+        }
+    }
+
     fn visit_method_call_expression(&mut self, expr: &super::MethodCallExpression) -> ExpressionVisitResult {
         if let Some(this_value) = self._get_var(&expr.self_name).cloned() {
-            let discr = std::mem::discriminant(&this_value);
-            if !self.std_methods.contains_key(&discr) {
-                return Err(format!("method for {} not supported", this_value.to_string()));
-            }
-            let methods_map = self.std_methods.get(&discr).unwrap().clone();
-            if let Some(f) = methods_map.get(&expr.method_name) {
-                for arg_expr in expr.args.iter() {
-                    arg_expr.accept(self)?;
-                }
-                let arg_count = &expr.args.len();
-                let mut args : Vec<ValueVariant> = Vec::new();
-                for _ in 0..*arg_count {
-                    if let Some(value) = self.values_stack.pop() {
-                        args.insert(0, value);
-                    } else {
-                        return Err(String::from("exptected value in stack"));
-                    }
-                }
-                let f_result = f(&this_value, &args);
-                match f_result {
-                    Ok(f_return_value) => {
-                        if let Some(val) = f_return_value {
-                            self.values_stack.push(val);
-                        }
-                    }
-                    Err(err_msg) => {
-                        return Err(format!("Error with method {} : {}", &expr.method_name, err_msg));                
-                    }
-                }
-            } else {
-                return Err(format!("unknows method {} for {}", expr.method_name, this_value.to_string()));
-            }
-
+            return self.call_method(&this_value, &expr.method_name, &expr.args);
         } else {
             return Err(format!("call method with unknown object '{}'", expr.self_name));
         }
-        return Ok(());
+    }
+
+    fn visit_anonymous_method_call_expression(&mut self, expr: &super::AnonymousMethodExpression) -> ExpressionVisitResult {
+        if let Some(this_value) = self.values_stack.pop() {
+            return self.call_method(&this_value, &expr.method_name, &expr.args);
+        } else {
+            return Err(format!("no value to call method {}", expr.method_name));
+        }
+    }
+
+    fn visit_return_expression(&mut self, expr: &crate::ex_core::expressions::ReturnExpression) -> ExpressionVisitResult {
+        return expr.expr.accept(self);
+    }
+
+    fn visit_statement_list_expression(&mut self, expr: &crate::ex_core::expressions::StatementListExpression) -> ExpressionVisitResult {
+        for statement in expr.statement_list.iter() {
+            statement.accept(self)?;
+        }
+        Ok(())
     }
 
 }
