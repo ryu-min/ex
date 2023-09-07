@@ -1,4 +1,3 @@
-
 use dyn_clone::DynClone;
 use super::tokenizer::Token;
 
@@ -19,6 +18,7 @@ pub trait ExpressionVisitor {
     fn visit_function_def_expression(&mut self, expr: &FunctionDefExpression) -> ExpressionVisitResult;
     fn visit_function_call_expression(&mut self, expr: &FunctionCallExpression) -> ExpressionVisitResult;
     fn visit_method_call_expression(&mut self, expr: &MethodCallExpression) -> ExpressionVisitResult;
+    fn visit_anonymous_method_call_expression(&mut self, expr: &AnonymousMethodExpression) -> ExpressionVisitResult;
     fn visit_return_expression(&mut self, expr: &ReturnExpression) -> ExpressionVisitResult;
     fn visit_statement_list_expression(&mut self, expr: &StatementListExpression) -> ExpressionVisitResult;
 }
@@ -206,6 +206,22 @@ impl MethodCallExpression {
 impl Expression for MethodCallExpression {
     fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
         visitor.visit_method_call_expression(self)
+    }
+}
+
+#[derive(Clone)]
+pub struct AnonymousMethodExpression {
+    pub method_name: String,
+    pub args: Vec<Box<dyn Expression>>
+}
+impl AnonymousMethodExpression {
+    pub fn new(method_name: String, args: Vec<Box<dyn Expression>>) -> Self {
+        AnonymousMethodExpression { method_name: method_name, args: args }
+    }
+}
+impl Expression for AnonymousMethodExpression {
+    fn accept(&self, visitor : & mut dyn ExpressionVisitor) ->  ExpressionVisitResult {
+        visitor.visit_anonymous_method_call_expression(self)
     }
 }
 
