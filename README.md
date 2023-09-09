@@ -84,3 +84,29 @@ while i > 0 {
 }
 writeln("while finished")
 </pre>
+
+### Functions
+You can use functions from the standard library in Ex, for a list of them see examples folder
+<pre>
+Example:
+ 
+a = read()
+write("input is: ", a)
+b = "   multi line test    "
+writeln(b, b, b)
+</pre>
+You can also declare your own functions as follows: 
+<pre>
+fn {function_name}([list_of_args]) 
+   function_body 
+}
+Example:
+ 
+fn sum2(a, b) {
+    return a + b
+}
+a = sum2(44, 6)
+b = a + 2
+write(a + b - 2
+</pre>
+
