@@ -27,9 +27,28 @@ ex.exe --help or ex.exe -h
 ### Variables
 
 In the Ex language, variables are created with their name and initializing value. Currently, variables can be of the following types: int, float, bool, string. The type of a variable depends on its initializing value. The type of a variable can change as a result of assigning a new value, and all variables are mutable <br />
- <br />
-examples:  <br />
-a = 1     // int value <br />
-b = 1.1   // float value <br />
-c = "str" // string value <br />
-d = true  // (or false) - bool value <br />
+<pre>
+Example:  
+ 
+a = 1     // int value 
+b = 1.1   // float value 
+c = "str" // string value 
+d = true  // (or false) - bool value 
+</pre>
+### If statement
+
+The Ex language supports the "if" construction, which has the following format: if [condition] {code block} [else {code block}].
+The condition should be a boolean expression.  <br />
+<pre>
+Example:  
+
+ if 1 > 2 {
+    writeln("false") // writeln is part of the standard library, see examples  
+}  
+ 
+my_bool = true  
+if my_bool {  
+    writeln("true")  
+}
+</pre>
+
