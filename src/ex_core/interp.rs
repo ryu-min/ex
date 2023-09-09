@@ -138,8 +138,13 @@ impl Interpreter {
                 arg_expr.accept(self)?;
             }
             let mut args : Vec<ValueVariant> = Vec::new();
-            while let Some(value) = self.values_stack.pop() {
-                args.insert(0, value);
+            let arg_count = &expr.args.len();
+            for _ in 0..*arg_count {
+                if let Some(value) = self.values_stack.pop() {
+                    args.insert(0, value);
+                } else {
+                    return Err(String::from("exptected value in stack"));
+                }
             }
             let f_result = f(&args);
             match f_result {
@@ -189,11 +194,16 @@ impl Interpreter {
             for arg_expr in args.iter() {
                 arg_expr.accept(self)?;
             }
-            let mut args : Vec<ValueVariant> = Vec::new();
-            while let Some(value) = self.values_stack.pop() {
-                args.insert(0, value);
+            let mut parsed_args : Vec<ValueVariant> = Vec::new();
+            let arg_count = &args.len();
+            for _ in 0..*arg_count {
+                if let Some(value) = self.values_stack.pop() {
+                    parsed_args.insert(0, value);
+                } else {
+                    return Err(String::from("exptected value in stack"));
+                }
             }
-            let f_result = f(&this_value, &args);
+            let f_result = f(&this_value, &parsed_args);
             match f_result {
                 Ok(f_return_value) => {
                     if let Some(val) = f_return_value {
