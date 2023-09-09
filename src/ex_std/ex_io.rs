@@ -29,6 +29,9 @@ impl IOFunctionRepo {
         for arg in args.iter() {
             println!("{}", arg.to_string());
         }
+        if args.len() == 0 {
+            println!();
+        }
         return Ok(None);
     }
 
