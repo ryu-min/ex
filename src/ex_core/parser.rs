@@ -177,13 +177,6 @@ impl Parser {
         return Ok(Box::new(MethodCallExpression::new(self_name, method_name, args)));
     }
 
-    fn anonymous_methods_statement(&mut self, this_expr: Box<dyn Expression>) -> ParseResult {
-        self.eat(Token::Dot)?;
-        let method_name = self.parse_name()?;
-        let args = self.parse_func_call_args()?;
-        return Ok(Box::new(AnonymousMethodExpression::new(this_expr, method_name, args)));
-    }
-
     fn expression(&mut self) -> ParseResult {
         return self.equality();
     }
