@@ -77,12 +77,7 @@ impl Parser {
                 self.advance();
                 return self.expression();    
             } else {
-                let expr = self.expression();
-                if self.current_token_is(Token::Dot) {
-                    return self.anonymous_methods_statement(expr?);
-                } else {
-                    return expr;
-                }
+                return self.expression();    
             }
         } else {
             return Err(String::from("no token for statement"));
@@ -289,7 +284,22 @@ impl Parser {
                 _ => {}
             }
         }
-        return self.primary();
+        return self.anonymous_methods();
+    }
+
+    fn anonymous_methods(&mut self) -> ParseResult {
+        let mut result =  self.primary()?;
+        loop {
+            if self.current_token_is(Token::Dot) && self.nth_token_is(1, Token::Name("".to_string())) {
+                self.eat(Token::Dot)?;
+                let method_name = self.parse_name()?;
+                let args = self.parse_func_call_args()?;
+                result = Box::new(AnonymousMethodExpression::new(result, method_name, args));
+            } else {
+                break;
+            }
+        } 
+        return Ok(result);
     }
     
     fn primary(&mut self) -> ParseResult {
