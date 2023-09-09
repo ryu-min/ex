@@ -21,3 +21,15 @@ ex.exe <path_to_file>
 To show the usage message:
 
 ex.exe --help or ex.exe -h
+
+## Language constructions
+
+### Variables
+
+In the Ex language, variables are created with their name and initializing value. Currently, variables can be of the following types: int, float, bool, string. The type of a variable depends on its initializing value. The type of a variable can change as a result of assigning a new value, and all variables are mutable <br />
+ <br />
+examples:  <br />
+a = 1     // int value <br />
+b = 1.1   // float value <br />
+c = "str" // string value <br />
+d = true  // (or false) - bool value <br />
