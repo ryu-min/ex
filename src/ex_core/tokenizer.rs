@@ -188,12 +188,19 @@ fn read_number_token(source: &mut String) -> Option<Token> {
     if result_string.is_empty() {
         return None
     }
-    source.replace_range(0..result_string.len(), "");
-    if result_string.contains('.') {
+    if let Some(dot_pos) = result_string.find('.') {
+        if dot_pos == result_string.len() - 1 {
+            if let Ok(i) = result_string[..dot_pos].parse::<i64>() {
+                source.replace_range(0..result_string.len() - 1, "");
+                return Some(Token::IntLiteral(i));
+            }
+        }
         if let Ok(f) = result_string.parse::<f64>() {
+            source.replace_range(0..result_string.len(), "");
             return Some(Token::FloatLiteral(f));
-        } 
+        }
     } else if let Ok(i) = result_string.parse::<i64>() {
+        source.replace_range(0..result_string.len(), "");
         return Some(Token::IntLiteral(i));
     }
     None
@@ -449,8 +456,8 @@ mod tests {
 
     #[test]
     fn number_tests() {
-        let program: String = String::from("5 + 5.5 = 11 - 0.5");
-        let expected_tokens = vec![
+        let program1: String = String::from("5 + 5.5 = 11 - 0.5");
+        let expected_tokens1 = vec![
             Token::IntLiteral(5),
             Token::Plus,
             Token::FloatLiteral(5.5),
@@ -460,8 +467,22 @@ mod tests {
             Token::FloatLiteral(0.5),
             Token::NewLine
         ];
-        let tokens = tokenize(&program);
-        assert_eq!(tokens, expected_tokens);
+        let tokens1 = tokenize(&program1);
+        assert_eq!(tokens1, expected_tokens1);
+
+
+        let program2 = String::from("2.pow(2)");
+        let expected_tokens2 = vec![
+            Token::IntLiteral(2),
+            Token::Dot,
+            Token::Name(String::from("pow")),
+            Token::OpenBracket,
+            Token::IntLiteral(2),
+            Token::CloseBracket,
+            Token::NewLine
+        ];
+        let tokens2 = tokenize(&program2);
+        assert_eq!(tokens2, expected_tokens2);
     }
 
     #[test]
