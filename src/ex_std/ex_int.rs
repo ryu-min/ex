@@ -29,7 +29,7 @@ impl IntMethods {
 
     fn pow(this: &ValueVariant, args:&StdMethodArgs) -> StdMethodResult {
         if args.len() != 1 {
-            return Err(String::from("method arg expected 1 argument"));
+            return Err(format!("method arg expected 1 argument, find {}", args.len()));
         }
         let this_i = Self::to_int(this)?;
         let pow = Self::to_int(&args[0])?;
