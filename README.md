@@ -52,3 +52,35 @@ if my_bool {
 }
 </pre>
 
+### Loops
+
+For loop:
+for i in [start, end] { ... }
+
+- "i" is the loop variable that takes on values from "start" to "end"
+- The code inside the curly braces will be executed for each value of "i"
+<pre>
+Example:
+ 
+writeln("start for loop from 0 to 9")
+for i in [0, 10] {
+    writeln("index in loop is ", i)
+}
+writeln("loop finished")
+</pre>
+ 
+While loop:
+while condition { ... }
+- The code inside the curly braces will be executed repeatedly as long as the "condition" is true
+<pre>
+Example:
+ 
+i = 10
+writeln("i = ", i)
+writeln("run while untill i > 0")
+while i > 0 {
+    writeln("in while i == ", i)
+    i = i - 1
+}
+writeln("while finished")
+</pre>
