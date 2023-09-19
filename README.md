@@ -97,7 +97,7 @@ writeln(b, b, b)
 </pre>
 You can also declare your own functions as follows: 
 <pre>
-fn {function_name}([list_of_args]) 
+fn {function_name}([list_of_args]) {
    function_body 
 }
 Example:
@@ -107,7 +107,7 @@ fn sum2(a, b) {
 }
 a = sum2(44, 6)
 b = a + 2
-write(a + b - 2
+write(a + b - 2)
 </pre>
 
 ### Methods
