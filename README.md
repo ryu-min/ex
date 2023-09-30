@@ -84,3 +84,44 @@ while i > 0 {
 }
 writeln("while finished")
 </pre>
+
+### Functions
+You can use functions from the standard library in Ex, for a list of them see examples folder
+<pre>
+Example:
+ 
+a = read()
+write("input is: ", a)
+b = "   multi line test    "
+writeln(b, b, b)
+</pre>
+You can also declare your own functions as follows: 
+<pre>
+fn {function_name}([list_of_args]) {
+   function_body 
+}
+Example:
+ 
+fn sum2(a, b) {
+    return a + b
+}
+a = sum2(44, 6)
+b = a + 2
+write(a + b - 2)
+</pre>
+
+### Methods
+In the Ex language, you can use methods from the standard library, for a list of them see examples. Ex supports both standard methods that are called on named objects, and anonymous methods that can be called on literals or expression results.
+<pre>
+Example:
+
+a = 2
+write("2 ^ 2 == ",a.pow(2)) 
+writeln()
+write ("2 ^ 4 == ", 2.pow(4)) 
+writeln()
+write("2 ^ 8 == ", 2.pow(4).pow(2))
+writeln()
+</pre>
+Currently, the Ex language does not support user-defined methods, and I am not sure if it will ever support them
+
